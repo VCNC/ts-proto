@@ -73,7 +73,6 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   const headerComment = sourceInfo.lookup(Fields.file.syntax, undefined);
   maybeAddComment(headerComment, text => (file = file.addComment(text)));
 
-  // first make all the type declarations
   visit(
     fileDesc,
     sourceInfo,
@@ -90,14 +89,14 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
 }
 
 function generateEnum(fullName: string, enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo): EnumSpec {
-  let spec = EnumSpec.create(fullName).addModifiers(Modifier.EXPORT);
+  let spec = EnumSpec.create(fullName).addModifiers(Modifier.CONST, Modifier.EXPORT);
   maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
 
   let index = 0;
   for (const valueDesc of enumDesc.value) {
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     maybeAddComment(info, text => (spec = spec.addJavadoc(`${valueDesc.name} - ${text}\n`)));
-    spec = spec.addConstant(valueDesc.name, valueDesc.number.toString());
+    spec = spec.addConstant(valueDesc.name, `"${valueDesc.name}"`);
   }
   return spec;
 }
@@ -128,33 +127,20 @@ function generateInterfaceDeclaration(
   return message;
 }
 
-function generateBaseInstance(fullName: string, messageDesc: DescriptorProto, options: Options) {
-  // Create a 'base' instance with default values for decode to use as a prototype
-  let baseMessage = PropertySpec.create('base' + fullName, TypeNames.anyType('object')).addModifiers(Modifier.CONST);
-  let initialValue = CodeBlock.empty().beginHash();
-  asSequence(messageDesc.field)
-    .filterNot(isWithinOneOf)
-    .forEach(field => {
-      initialValue = initialValue.addHashEntry(
-        maybeSnakeToCamel(field.name, options),
-        defaultValue(field.type, options)
-      );
-    });
-  return baseMessage.initializerBlock(initialValue.endHash());
-}
-
 type MessageVisitor = (
   fullName: string,
   desc: DescriptorProto,
   sourceInfo: SourceInfo,
   fullProtoTypeName: string
 ) => void;
+
 type EnumVisitor = (
   fullName: string,
   desc: EnumDescriptorProto,
   sourceInfo: SourceInfo,
   fullProtoTypeName: string
 ) => void;
+
 export function visit(
   proto: FileDescriptorProto | DescriptorProto,
   sourceInfo: SourceInfo,
@@ -190,30 +176,6 @@ export function visit(
     messageFn(tsFullName, message, nestedSourceInfo, protoFullName);
     visit(message, nestedSourceInfo, messageFn, options, enumFn, tsFullName + '_', protoFullName + '.');
   }
-}
-
-function visitServices(
-  proto: FileDescriptorProto,
-  sourceInfo: SourceInfo,
-  serviceFn: (desc: ServiceDescriptorProto, sourceInfo: SourceInfo) => void
-): void {
-  let index = 0;
-  for (const serviceDesc of proto.service) {
-    const nestedSourceInfo = sourceInfo.open(Fields.file.service, index++);
-    serviceFn(serviceDesc, nestedSourceInfo);
-  }
-}
-
-interface BatchMethod {
-  methodDesc: MethodDescriptorProto;
-  // a ${package + service + method name} key to identify this method in caches
-  uniqueIdentifier: string;
-  singleMethodName: string;
-  inputFieldName: string;
-  inputType: TypeName;
-  outputFieldName: string;
-  outputType: TypeName;
-  mapType: boolean;
 }
 
 function hasSingleRepeatedField(messageDesc: DescriptorProto): boolean {

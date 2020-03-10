@@ -58,7 +58,7 @@ export class EnumSpec extends Imm<EnumSpec> {
   }
 
   public addModifiers(...modifiers: Modifier[]): this {
-    modifiers.forEach(it => check(it === Modifier.EXPORT || it === Modifier.DECLARE));
+    modifiers.forEach(it => check(it === Modifier.EXPORT || it === Modifier.DECLARE || it === Modifier.CONST));
     modifiers.forEach(m => this.modifiers.push(m));
     return this;
   }
