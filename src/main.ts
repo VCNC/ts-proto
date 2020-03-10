@@ -1,48 +1,13 @@
-import {
-  ClassSpec,
-  CodeBlock,
-  EnumSpec,
-  FileSpec,
-  FunctionSpec,
-  InterfaceSpec,
-  Modifier,
-  PropertySpec,
-  TypeName,
-  TypeNames,
-  Union
-} from './ts-poet'
+import { EnumSpec, FileSpec, InterfaceSpec, Modifier, PropertySpec, TypeNames } from './ts-poet';
 import { google } from '../build/pbjs';
-import {
-  basicLongWireType,
-  basicTypeName,
-  basicWireType,
-  defaultValue,
-  detectMapType,
-  isBytes,
-  isEnum,
-  isMapType,
-  isMessage,
-  isPrimitive,
-  isRepeated,
-  isTimestamp,
-  isValueType,
-  isWithinOneOf,
-  messageToTypeName,
-  packedType,
-  toReaderCall,
-  toTypeName,
-  TypeMap,
-  isLong
-} from './types';
-import { asSequence } from 'sequency';
+import { detectMapType, toTypeName, TypeMap } from './types';
 import SourceInfo, { Fields } from './sourceInfo';
-import { optionsFromParameter, singular, maybeAddComment } from './utils';
+import { maybeAddComment, optionsFromParameter } from './utils';
+import { NamespaceSpec } from './ts-poet/NamespaceSpec';
 import DescriptorProto = google.protobuf.DescriptorProto;
 import FieldDescriptorProto = google.protobuf.FieldDescriptorProto;
 import FileDescriptorProto = google.protobuf.FileDescriptorProto;
 import EnumDescriptorProto = google.protobuf.EnumDescriptorProto;
-import ServiceDescriptorProto = google.protobuf.ServiceDescriptorProto;
-import MethodDescriptorProto = google.protobuf.MethodDescriptorProto;
 
 export type Options = {
   useContext: boolean;
@@ -73,23 +38,30 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   const headerComment = sourceInfo.lookup(Fields.file.syntax, undefined);
   maybeAddComment(headerComment, text => (file = file.addComment(text)));
 
-  visit(
-    fileDesc,
-    sourceInfo,
-    (fullName, message, sInfo) => {
-      file = file.addInterface(generateInterfaceDeclaration(typeMap, fullName, message, sInfo, options));
-    },
-    options,
-    (fullName, enumDesc, sInfo) => {
-      file = file.addEnum(generateEnum(fullName, enumDesc, sInfo));
+  let index = 0;
+  for (const enumDesc of fileDesc.enumType) {
+    const nestedSourceInfo = sourceInfo.open(Fields.file.enum_type, index++);
+    file = file.addEnum(
+      generateEnum(enumDesc, nestedSourceInfo, options)
+    );
+  }
+
+  index = 0;
+  for (const message of fileDesc.messageType) {
+    const nestedSourceInfo = sourceInfo.open(Fields.file.message_type, index++);
+    const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, message, nestedSourceInfo, options)
+    file = file.addInterface(nestedInterfaceSpec)
+    if (nestedNamespaceSpec != null) {
+      file = file.addNamespace(nestedNamespaceSpec)
     }
-  );
+  }
 
   return file;
 }
 
-function generateEnum(fullName: string, enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo): EnumSpec {
-  let spec = EnumSpec.create(fullName).addModifiers(Modifier.CONST, Modifier.EXPORT);
+function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): EnumSpec {
+  let name = maybeSnakeToCamel(enumDesc.name, options)
+  let spec = EnumSpec.create(name).addModifiers(Modifier.CONST, Modifier.EXPORT);
   maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
 
   let index = 0;
@@ -104,12 +76,12 @@ function generateEnum(fullName: string, enumDesc: EnumDescriptorProto, sourceInf
 // Create the interface with properties
 function generateInterfaceDeclaration(
   typeMap: TypeMap,
-  fullName: string,
   messageDesc: DescriptorProto,
   sourceInfo: SourceInfo,
   options: Options
-) {
-  let message = InterfaceSpec.create(fullName).addModifiers(Modifier.EXPORT);
+): [InterfaceSpec, NamespaceSpec | undefined] {
+  let messageName = maybeSnakeToCamel(messageDesc.name, options);
+  let message = InterfaceSpec.create(messageName).addModifiers(Modifier.EXPORT);
   maybeAddComment(sourceInfo, text => (message = message.addJavadoc(text)));
 
   let index = 0;
@@ -124,7 +96,35 @@ function generateInterfaceDeclaration(
 
     message = message.addProperty(prop);
   }
-  return message;
+  let namespaceSpec: NamespaceSpec | undefined = undefined;
+  if (messageDesc.enumType.length !== 0 || messageDesc.nestedType.length !== 0) {
+    namespaceSpec = NamespaceSpec.create(messageName)
+      .addModifiers(Modifier.EXPORT);
+
+    if (messageDesc.enumType.length !== 0) {
+      let index = 0;
+      for (const enumDesc of messageDesc.enumType) {
+        const nestedSourceInfo = sourceInfo.open(Fields.message.enum_type, index++);
+        namespaceSpec = namespaceSpec.addEnum(
+          generateEnum(enumDesc, nestedSourceInfo, options)
+        );
+      }
+    }
+
+    if (messageDesc.nestedType.length !== 0) {
+      let index = 0;
+      for (const nestedMessageDesc of messageDesc.nestedType) {
+        const nestedSourceInfo = sourceInfo.open(Fields.message.nested_type, index++);
+        const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, nestedMessageDesc, nestedSourceInfo, options)
+        namespaceSpec = namespaceSpec.addInterface(nestedInterfaceSpec)
+        if (nestedNamespaceSpec != null) {
+          namespaceSpec = namespaceSpec.addNamespace(nestedNamespaceSpec)
+        }
+      }
+    }
+  }
+
+  return [message, namespaceSpec];
 }
 
 type MessageVisitor = (
@@ -174,7 +174,7 @@ export function visit(
     const tsFullName = tsPrefix + maybeSnakeToCamel(message.name, options);
     const nestedSourceInfo = sourceInfo.open(childType, index++);
     messageFn(tsFullName, message, nestedSourceInfo, protoFullName);
-    visit(message, nestedSourceInfo, messageFn, options, enumFn, tsFullName + '_', protoFullName + '.');
+    visit(message, nestedSourceInfo, messageFn, options, enumFn, tsFullName + '.', protoFullName + '.');
   }
 }
 

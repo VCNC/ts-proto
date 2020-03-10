@@ -3,11 +3,11 @@ import { CodeBlock, Member, TypeName, TypeNames } from './ts-poet';
 import { Options, visit } from './main';
 import { fail } from './utils';
 import { asSequence } from 'sequency';
+import SourceInfo from './sourceInfo';
 import FieldDescriptorProto = google.protobuf.FieldDescriptorProto;
 import CodeGeneratorRequest = google.protobuf.compiler.CodeGeneratorRequest;
 import EnumDescriptorProto = google.protobuf.EnumDescriptorProto;
 import DescriptorProto = google.protobuf.DescriptorProto;
-import SourceInfo from './sourceInfo';
 
 /** Based on https://github.com/dcodeIO/protobuf.js/blob/master/src/types.js#L37. */
 export function basicWireType(type: FieldDescriptorProto.Type): number {
@@ -281,6 +281,8 @@ export function toTypeName(typeMap: TypeMap, messageDesc: DescriptorProto, field
     }
   } else if ((isWithinOneOf(field) || isMessage(field)) && !isValueType(field)) {
     type = TypeNames.unionType(type, TypeNames.UNDEFINED);
+  } else if (isEnum(field)) {
+    type = TypeNames.unionType(type, TypeNames.STRING);
   }
   return type;
 }

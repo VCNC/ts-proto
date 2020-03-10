@@ -12,6 +12,7 @@ import { SymbolSpec, SymbolSpecs } from './SymbolSpecs';
 import { TypeAliasSpec } from './TypeAliasSpec';
 import { TypeName, TypeNames } from './TypeNames';
 import { filterInstances } from './utils';
+import { NamespaceSpec } from './NamespaceSpec';
 
 /**
  * A TypeScript file containing top level objects like classes, objects, functions, properties, and type
@@ -66,6 +67,8 @@ export class FileSpec extends Imm<FileSpec> {
         } else if (it instanceof PropertySpec) {
           return it.name;
         } else if (it instanceof TypeAliasSpec) {
+          return it.name;
+        } else if (it instanceof NamespaceSpec) {
           return it.name;
         } else {
           throw new Error('unrecognized member type');
@@ -154,6 +157,12 @@ export class FileSpec extends Imm<FileSpec> {
     });
   }
 
+  public addNamespace(namespaceSpec: NamespaceSpec): this {
+    return this.copy({
+      members: [...this.members, namespaceSpec],
+    });
+  }
+
   public indent(indent: string): this {
     return this.copy({
       indentField: indent,
@@ -191,6 +200,8 @@ export class FileSpec extends Imm<FileSpec> {
           member.emit(codeWriter);
         } else if (member instanceof CodeBlock) {
           codeWriter.emitCodeBlock(member);
+        } else if (member instanceof NamespaceSpec) {
+          member.emit(codeWriter)
         } else {
           throw new Error('unhandled');
         }

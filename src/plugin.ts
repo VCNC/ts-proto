@@ -14,7 +14,11 @@ async function main() {
   // const request = CodeGeneratorRequest.fromObject(json);
   const request = CodeGeneratorRequest.decode(stdin);
   const typeMap = createTypeMap(request, optionsFromParameter(request.parameter));
-  const files = request.protoFile.map(file => {
+  const files = request.protoFile.filter( file => {
+    // ignore google.protobuf package
+    // because for reason i don't know, google/protobuf/descriptor.proto is passed on to this plugin
+    return file.package !== 'google.protobuf'
+  }).map(file => {
     const spec = generateFile(typeMap, file, request.parameter);
     return new CodeGeneratorResponse.File({
       name: spec.path,

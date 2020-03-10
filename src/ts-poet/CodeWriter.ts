@@ -165,7 +165,7 @@ export class CodeWriter implements SymbolReferenceTracker {
           }
         });
         // Output named imports as a group
-        const names = unique(filterInstances(imports, ImportsName).map(it => it.value));
+        const names = unique(filterInstances(imports, ImportsName).map(it => it.value.split('.')[0]));
         const def = unique(filterInstances(imports, ImportsDefault).map(it => it.value));
         if (names.length > 0 || def.length > 0) {
           const namesPart = names.length > 0 ? [`{ ${names.join(', ')} }`] : [];
