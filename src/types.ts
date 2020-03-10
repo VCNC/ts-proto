@@ -1,5 +1,5 @@
 import { google } from '../build/pbjs';
-import { CodeBlock, Member, TypeName, TypeNames } from 'ts-poet';
+import { CodeBlock, Member, TypeName, TypeNames } from './ts-poet';
 import { Options, visit } from './main';
 import { fail } from './utils';
 import { asSequence } from 'sequency';

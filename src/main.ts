@@ -10,7 +10,7 @@ import {
   TypeName,
   TypeNames,
   Union
-} from 'ts-poet';
+} from './ts-poet'
 import { google } from '../build/pbjs';
 import {
   basicLongWireType,

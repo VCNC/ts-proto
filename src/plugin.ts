@@ -5,7 +5,7 @@ import { generateFile } from './main';
 import { createTypeMap } from './types';
 import CodeGeneratorRequest = google.protobuf.compiler.CodeGeneratorRequest;
 import CodeGeneratorResponse = google.protobuf.compiler.CodeGeneratorResponse;
-import { FileSpec } from 'ts-poet';
+import { FileSpec } from './ts-poet';
 
 // this would be the plugin called by the protoc compiler
 async function main() {
