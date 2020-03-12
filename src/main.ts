@@ -1,9 +1,19 @@
-import { EnumSpec, FileSpec, InterfaceSpec, Modifier, PropertySpec, TypeNames } from './ts-poet';
+import { Any, EnumSpec, FileSpec, FunctionSpec, InterfaceSpec, Modifier, PropertySpec, TypeNames } from './ts-poet';
 import { google } from '../build/pbjs';
-import { detectMapType, toTypeName, TypeMap } from './types';
+import {
+  basicTypeName,
+  detectMapType,
+  getMapValueFieldDesc,
+  isEnum,
+  isMessage,
+  isRepeated,
+  toTypeName,
+  TypeMap
+} from './types';
 import SourceInfo, { Fields } from './sourceInfo';
 import { maybeAddComment, optionsFromParameter } from './utils';
 import { NamespaceSpec } from './ts-poet/NamespaceSpec';
+import { Imported, ImportsName } from './ts-poet/SymbolSpecs';
 import DescriptorProto = google.protobuf.DescriptorProto;
 import FieldDescriptorProto = google.protobuf.FieldDescriptorProto;
 import FileDescriptorProto = google.protobuf.FileDescriptorProto;
@@ -41,27 +51,31 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   let index = 0;
   for (const enumDesc of fileDesc.enumType) {
     const nestedSourceInfo = sourceInfo.open(Fields.file.enum_type, index++);
-    file = file.addEnum(
-      generateEnum(enumDesc, nestedSourceInfo, options)
-    );
+    const [enumSpec, enumToJson] = generateEnum(enumDesc, nestedSourceInfo, options)
+    file = file.addEnum(enumSpec).addFunction(enumToJson)
   }
 
   index = 0;
   for (const message of fileDesc.messageType) {
     const nestedSourceInfo = sourceInfo.open(Fields.file.message_type, index++);
-    const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, message, nestedSourceInfo, options)
-    file = file.addInterface(nestedInterfaceSpec)
+    const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, message, nestedSourceInfo, options);
+    file = file.addInterface(nestedInterfaceSpec);
     if (nestedNamespaceSpec != null) {
-      file = file.addNamespace(nestedNamespaceSpec)
+      file = file.addNamespace(nestedNamespaceSpec);
     }
   }
 
   return file;
 }
 
-function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): EnumSpec {
+function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): [EnumSpec, FunctionSpec] {
   let name = maybeSnakeToCamel(enumDesc.name, options)
   let spec = EnumSpec.create(name).addModifiers(Modifier.CONST, Modifier.EXPORT);
+  let toJsonSpec = FunctionSpec.create(name+'_fromString')
+    .addModifiers(Modifier.EXPORT)
+    .returns(`${name} | undefined`)
+    .addParameter('str', 'string')
+    .beginControlFlow('switch (str)');
   maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
 
   let index = 0;
@@ -69,8 +83,13 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     maybeAddComment(info, text => (spec = spec.addJavadoc(`${valueDesc.name} - ${text}\n`)));
     spec = spec.addConstant(valueDesc.name, `"${valueDesc.name}"`);
+    toJsonSpec = toJsonSpec.addCode('case %L:\n', name + '.' + valueDesc.name)
   }
-  return spec;
+  toJsonSpec = toJsonSpec
+    .addCode('return str\n')
+    .addCode('default: return undefined\n')
+    .endControlFlow();
+  return [spec, toJsonSpec];
 }
 
 // Create the interface with properties
@@ -82,44 +101,114 @@ function generateInterfaceDeclaration(
 ): [InterfaceSpec, NamespaceSpec | undefined] {
   let messageName = maybeSnakeToCamel(messageDesc.name, options);
   let message = InterfaceSpec.create(messageName).addModifiers(Modifier.EXPORT);
+  let messageFromJson = FunctionSpec.create('fromJson')
+    .addModifiers(Modifier.EXPORT)
+    .returns(`${messageName}`)
+    .addParameter('obj', 'any')
+    .beginControlFlow('return')
+    .addCode('...obj,\n');
   maybeAddComment(sourceInfo, text => (message = message.addJavadoc(text)));
 
   let index = 0;
   for (const fieldDesc of messageDesc.field) {
+    let type = toTypeName(typeMap, messageDesc, fieldDesc, options);
+    let basicType = basicTypeName(typeMap, fieldDesc, options);
+    let fieldName = maybeSnakeToCamel(fieldDesc.name, options);
     let prop = PropertySpec.create(
-      maybeSnakeToCamel(fieldDesc.name, options),
-      toTypeName(typeMap, messageDesc, fieldDesc, options)
+      fieldName,
+      type.type,
+      type.isOptional
     );
-
     const info = sourceInfo.lookup(Fields.message.field, index++);
     maybeAddComment(info, text => (prop = prop.addJavadoc(text)));
 
     message = message.addProperty(prop);
-  }
-  let namespaceSpec: NamespaceSpec | undefined = undefined;
-  if (messageDesc.enumType.length !== 0 || messageDesc.nestedType.length !== 0) {
-    namespaceSpec = NamespaceSpec.create(messageName)
-      .addModifiers(Modifier.EXPORT);
 
-    if (messageDesc.enumType.length !== 0) {
-      let index = 0;
-      for (const enumDesc of messageDesc.enumType) {
-        const nestedSourceInfo = sourceInfo.open(Fields.message.enum_type, index++);
-        namespaceSpec = namespaceSpec.addEnum(
-          generateEnum(enumDesc, nestedSourceInfo, options)
-        );
+    // generation for fromJson function
+    if (isRepeated(fieldDesc)) {
+      const mapType = detectMapType(typeMap, messageDesc, fieldDesc, options);
+      if (mapType) {
+        const valueFieldDesc = getMapValueFieldDesc(typeMap, messageDesc, fieldDesc, options);
+        if (valueFieldDesc != null && (isEnum(valueFieldDesc) || isMessage(valueFieldDesc))) {
+          const { keyType, valueType } = mapType;
+          messageFromJson = messageFromJson.addCode(`${fieldName}: (() => {\n`)
+            .indent()
+            .addCode('const ret: any = {}\n')
+            .addCode('Object.entries(obj).forEach(([k,v]) => {\n')
+            .indent()
+            .addCode('ret[k] = ');
+
+          if (isEnum(valueFieldDesc)) {
+            const valueAnyType = valueType as Any;
+            const importedSymbol = valueAnyType.imported as Imported;
+            // symbol and functionType is needed for import.
+            const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
+            const functionType = TypeNames.anyType(valueAnyType.usage + "_fromString", functionSymbol);
+            messageFromJson = messageFromJson.addCode(`%T(v as string)\n`, functionType)
+          } else if (isMessage(valueFieldDesc)) {
+            messageFromJson = messageFromJson.addCode(`%T.fromJson(v)\n`, valueType)
+          }
+
+          messageFromJson = messageFromJson.unindent()
+            .addCode('})\n')
+            .addCode('return ret\n')
+            .unindent()
+            .addCode('})(),\n')
+        }
+      } else {
+        if (isEnum(fieldDesc)) {
+          const basicAnyType = basicType as Any;
+          const importedSymbol = basicAnyType.imported as Imported;
+          // symbol and functionType is needed for import.
+          const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
+          const functionType = TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
+          messageFromJson = messageFromJson.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType)
+        } else if (isMessage(fieldDesc)) {
+          messageFromJson = messageFromJson.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T.fromJson(v)),\n`, basicType)
+        }
+      }
+    } else if (isEnum(fieldDesc) || isMessage(fieldDesc)) {
+      if (isEnum(fieldDesc)) {
+        const basicAnyType = basicType as Any;
+        const importedSymbol = basicAnyType.imported as Imported;
+        // symbol and functionType is needed for import.
+        const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
+        const functionType = TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
+        messageFromJson = messageFromJson.addCode(`${fieldName}: %T(obj.${fieldName}),\n`, functionType);
+      } else if (isMessage(fieldDesc)) {
+        messageFromJson = messageFromJson.addCode(`${fieldName}: obj.${fieldName} != null ? %T.fromJson(obj.${fieldName}) : undefined,\n`, basicType)
       }
     }
 
-    if (messageDesc.nestedType.length !== 0) {
-      let index = 0;
-      for (const nestedMessageDesc of messageDesc.nestedType) {
-        const nestedSourceInfo = sourceInfo.open(Fields.message.nested_type, index++);
-        const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, nestedMessageDesc, nestedSourceInfo, options)
-        namespaceSpec = namespaceSpec.addInterface(nestedInterfaceSpec)
-        if (nestedNamespaceSpec != null) {
-          namespaceSpec = namespaceSpec.addNamespace(nestedNamespaceSpec)
-        }
+  }
+  messageFromJson = messageFromJson.endControlFlow();
+  let namespaceSpec = NamespaceSpec.create(messageName)
+    .addModifiers(Modifier.EXPORT);
+
+  namespaceSpec = namespaceSpec.addFunction(messageFromJson);
+
+  if (messageDesc.enumType.length !== 0) {
+    let index = 0;
+    for (const enumDesc of messageDesc.enumType) {
+      const nestedSourceInfo = sourceInfo.open(Fields.message.enum_type, index++);
+      const [enumSpec, enumToJson] = generateEnum(enumDesc, nestedSourceInfo, options)
+      namespaceSpec = namespaceSpec
+        .addEnum(enumSpec)
+        .addFunction(enumToJson)
+    }
+  }
+
+  if (messageDesc.nestedType.length !== 0) {
+    let index = 0;
+    for (const nestedMessageDesc of messageDesc.nestedType) {
+      if (nestedMessageDesc.options?.mapEntry === true) {
+        continue;
+      }
+      const nestedSourceInfo = sourceInfo.open(Fields.message.nested_type, index++);
+      const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, nestedMessageDesc, nestedSourceInfo, options)
+      namespaceSpec = namespaceSpec.addInterface(nestedInterfaceSpec)
+      if (nestedNamespaceSpec != null) {
+        namespaceSpec = namespaceSpec.addNamespace(nestedNamespaceSpec)
       }
     }
   }
@@ -203,19 +292,4 @@ function maybeSnakeToCamel(s: string, options: Options): string {
 
 function capitalize(s: string): string {
   return s.substring(0, 1).toUpperCase() + s.substring(1);
-}
-
-function maybeCastToNumber(
-  typeMap: TypeMap,
-  messageDesc: DescriptorProto,
-  field: FieldDescriptorProto,
-  variableName: string,
-  options: Options
-): string {
-  const { keyType } = detectMapType(typeMap, messageDesc, field, options)!;
-  if (keyType === TypeNames.STRING) {
-    return variableName;
-  } else {
-    return `Number(${variableName})`;
-  }
 }

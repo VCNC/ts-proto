@@ -269,8 +269,9 @@ function toModuleAndType(typeMap: TypeMap, protoType: string): [string, string, 
 }
 
 /** Return the TypeName for any field (primitive/message/etc.) as exposed in the interface. */
-export function toTypeName(typeMap: TypeMap, messageDesc: DescriptorProto, field: FieldDescriptorProto, options: Options): TypeName {
+export function toTypeName(typeMap: TypeMap, messageDesc: DescriptorProto, field: FieldDescriptorProto, options: Options): {type: TypeName, isOptional: boolean} {
   let type = basicTypeName(typeMap, field, options, false);
+  let isOptional = false
   if (isRepeated(field)) {
     const mapType = detectMapType(typeMap, messageDesc, field, options);
     if (mapType) {
@@ -280,11 +281,11 @@ export function toTypeName(typeMap: TypeMap, messageDesc: DescriptorProto, field
       type = TypeNames.arrayType(type);
     }
   } else if ((isWithinOneOf(field) || isMessage(field)) && !isValueType(field)) {
-    type = TypeNames.unionType(type, TypeNames.UNDEFINED);
+    isOptional = true
   } else if (isEnum(field)) {
-    type = TypeNames.unionType(type, TypeNames.STRING);
+    isOptional = true
   }
-  return type;
+  return {type, isOptional};
 }
 
 export function detectMapType(
@@ -302,7 +303,23 @@ export function detectMapType(
     const keyType = toTypeName(typeMap, messageDesc, mapType.field[0], options);
     // use basicTypeName because we don't need the '| undefined'
     const valueType = basicTypeName(typeMap, mapType.field[1], options);
-    return { messageDesc: mapType, keyType, valueType };
+    return { messageDesc: mapType, keyType: keyType.type, valueType };
+  }
+  return undefined;
+}
+
+export function getMapValueFieldDesc(
+  typeMap: TypeMap,
+  messageDesc: DescriptorProto,
+  fieldDesc: FieldDescriptorProto,
+  options: Options
+): FieldDescriptorProto | undefined {
+  if (
+    fieldDesc.label === FieldDescriptorProto.Label.LABEL_REPEATED &&
+    fieldDesc.type === FieldDescriptorProto.Type.TYPE_MESSAGE
+  ) {
+    const mapType = typeMap.get(fieldDesc.typeName)![2] as DescriptorProto;
+    return mapType.field[1];
   }
   return undefined;
 }
