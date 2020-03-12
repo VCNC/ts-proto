@@ -21,7 +21,7 @@ export class EnumSpec extends Imm<EnumSpec> {
   @imm
   public readonly modifiers!: Modifier[];
   @imm
-  public readonly constants!: Map<string, CodeBlock | undefined>;
+  public readonly constants!: Map<string, {value: CodeBlock | undefined, javaDoc: CodeBlock | undefined}>;
 
   public emit(codeWriter: CodeWriter): void {
     codeWriter.emitJavaDoc(this.javaDoc);
@@ -29,11 +29,14 @@ export class EnumSpec extends Imm<EnumSpec> {
     codeWriter.emitCode('enum %L {\n', this.name);
     codeWriter.indent();
     let left = this.constants.size;
-    this.constants.forEach((value, key) => {
+    this.constants.forEach((constant, key) => {
+      if (constant.javaDoc) {
+        codeWriter.emitJavaDoc(constant.javaDoc)
+      }
       codeWriter.emitCode('%L', key);
-      if (value) {
+      if (constant.value) {
         codeWriter.emitCode(' = ');
-        codeWriter.emitCodeBlock(value);
+        codeWriter.emitCodeBlock(constant.value);
       }
       if (left-- > 0) {
         codeWriter.emit(',\n');
@@ -63,9 +66,9 @@ export class EnumSpec extends Imm<EnumSpec> {
     return this;
   }
 
-  public addConstant(name: string, initializer?: string | CodeBlock): this {
+  public addConstant(name: string, initializer?: string | CodeBlock, javaDoc?: CodeBlock): this {
     // require(name.isName) { "not a valid enum constant: $name" }
-    this.constants.set(name, typeof initializer === 'string' ? CodeBlock.of(initializer) : initializer);
+    this.constants.set(name, {value: typeof initializer === 'string' ? CodeBlock.of(initializer) : initializer, javaDoc: javaDoc });
     return this;
   }
 

@@ -1,4 +1,14 @@
-import { Any, EnumSpec, FileSpec, FunctionSpec, InterfaceSpec, Modifier, PropertySpec, TypeNames } from './ts-poet';
+import {
+  Any,
+  CodeBlock,
+  EnumSpec,
+  FileSpec,
+  FunctionSpec,
+  InterfaceSpec,
+  Modifier,
+  PropertySpec,
+  TypeNames
+} from './ts-poet';
 import { google } from '../build/pbjs';
 import {
   basicTypeName,
@@ -81,8 +91,9 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
   let index = 0;
   for (const valueDesc of enumDesc.value) {
     const info = sourceInfo.lookup(Fields.enum.value, index++);
-    maybeAddComment(info, text => (spec = spec.addJavadoc(`${valueDesc.name} - ${text}\n`)));
-    spec = spec.addConstant(valueDesc.name, `"${valueDesc.name}"`);
+    let javaDoc: string | undefined = undefined;
+    maybeAddComment(info, text => (javaDoc = text));
+    spec = spec.addConstant(valueDesc.name, `"${valueDesc.name}"`, javaDoc != null ? CodeBlock.of(javaDoc) : javaDoc);
     toJsonSpec = toJsonSpec.addCode('case %L:\n', name + '.' + valueDesc.name)
   }
   toJsonSpec = toJsonSpec
