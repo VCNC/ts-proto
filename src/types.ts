@@ -219,6 +219,12 @@ export function isEnum(field: FieldDescriptorProto): boolean {
   return field.type === FieldDescriptorProto.Type.TYPE_ENUM;
 }
 
+export function is64BitInteger(field: FieldDescriptorProto): boolean {
+  return field.type === FieldDescriptorProto.Type.TYPE_FIXED64 ||
+    field.type === FieldDescriptorProto.Type.TYPE_UINT64 ||
+    field.type === FieldDescriptorProto.Type.TYPE_INT64;
+}
+
 export function isWithinOneOf(field: FieldDescriptorProto): boolean {
   return field.hasOwnProperty('oneofIndex');
 }

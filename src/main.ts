@@ -13,7 +13,7 @@ import { google } from '../build/pbjs';
 import {
   basicTypeName,
   detectMapType,
-  getMapValueFieldDesc,
+  getMapValueFieldDesc, is64BitInteger,
   isEnum,
   isMessage,
   isRepeated,
@@ -112,7 +112,7 @@ function generateInterfaceDeclaration(
 ): [InterfaceSpec, NamespaceSpec | undefined] {
   let messageName = maybeSnakeToCamel(messageDesc.name, options);
   let message = InterfaceSpec.create(messageName).addModifiers(Modifier.EXPORT);
-  let messageFromJson = FunctionSpec.create('fromJson')
+  let messageFromObject = FunctionSpec.create('fromObject')
     .addModifiers(Modifier.EXPORT)
     .returns(`${messageName}`)
     .addParameter('obj', 'any')
@@ -135,14 +135,15 @@ function generateInterfaceDeclaration(
 
     message = message.addProperty(prop);
 
-    // generation for fromJson function
+    // generation for fromObject function
     if (isRepeated(fieldDesc)) {
       const mapType = detectMapType(typeMap, messageDesc, fieldDesc, options);
       if (mapType) {
+        // if it is a map,
         const valueFieldDesc = getMapValueFieldDesc(typeMap, messageDesc, fieldDesc, options);
-        if (valueFieldDesc != null && (isEnum(valueFieldDesc) || isMessage(valueFieldDesc))) {
+        if (valueFieldDesc != null && (isEnum(valueFieldDesc) || isMessage(valueFieldDesc) || is64BitInteger(valueFieldDesc))) {
           const { keyType, valueType } = mapType;
-          messageFromJson = messageFromJson.addCode(`${fieldName}: (() => {\n`)
+          messageFromObject = messageFromObject.addCode(`${fieldName}: (() => {\n`)
             .indent()
             .addCode('const ret: any = {}\n')
             .addCode('Object.entries(obj).forEach(([k,v]) => {\n')
@@ -155,48 +156,54 @@ function generateInterfaceDeclaration(
             // symbol and functionType is needed for import.
             const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
             const functionType = TypeNames.anyType(valueAnyType.usage + "_fromString", functionSymbol);
-            messageFromJson = messageFromJson.addCode(`%T(v as string)\n`, functionType)
+            messageFromObject = messageFromObject.addCode(`%T(v as string)\n`, functionType)
           } else if (isMessage(valueFieldDesc)) {
-            messageFromJson = messageFromJson.addCode(`%T.fromJson(v)\n`, valueType)
+            messageFromObject = messageFromObject.addCode(`%T.fromObject(v)\n`, valueType)
+          } else if (is64BitInteger(valueFieldDesc)) {
+            messageFromObject = messageFromObject.addCode(`parseInt(v)\n`)
           }
 
-          messageFromJson = messageFromJson.unindent()
+          messageFromObject = messageFromObject.unindent()
             .addCode('})\n')
             .addCode('return ret\n')
             .unindent()
             .addCode('})(),\n')
         }
       } else {
+        // if it is a list
         if (isEnum(fieldDesc)) {
           const basicAnyType = basicType as Any;
           const importedSymbol = basicAnyType.imported as Imported;
           // symbol and functionType is needed for import.
           const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
           const functionType = TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
-          messageFromJson = messageFromJson.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType)
+          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType)
         } else if (isMessage(fieldDesc)) {
-          messageFromJson = messageFromJson.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T.fromJson(v)),\n`, basicType)
+          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`, basicType)
+        } else if (is64BitInteger(fieldDesc)) {
+          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`, basicType)
         }
       }
-    } else if (isEnum(fieldDesc) || isMessage(fieldDesc)) {
+    } else if (isEnum(fieldDesc) || isMessage(fieldDesc) || is64BitInteger(fieldDesc)) {
       if (isEnum(fieldDesc)) {
         const basicAnyType = basicType as Any;
         const importedSymbol = basicAnyType.imported as Imported;
         // symbol and functionType is needed for import.
         const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
         const functionType = TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
-        messageFromJson = messageFromJson.addCode(`${fieldName}: %T(obj.${fieldName}),\n`, functionType);
+        messageFromObject = messageFromObject.addCode(`${fieldName}: %T(obj.${fieldName}),\n`, functionType);
       } else if (isMessage(fieldDesc)) {
-        messageFromJson = messageFromJson.addCode(`${fieldName}: obj.${fieldName} != null ? %T.fromJson(obj.${fieldName}) : undefined,\n`, basicType)
+        messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName} != null ? %T.fromObject(obj.${fieldName}) : undefined,\n`, basicType)
+      } else if (is64BitInteger(fieldDesc)) {
+        messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`)
       }
     }
-
   }
-  messageFromJson = messageFromJson.endControlFlow();
+  messageFromObject = messageFromObject.endControlFlow();
   let namespaceSpec = NamespaceSpec.create(messageName)
     .addModifiers(Modifier.EXPORT);
 
-  namespaceSpec = namespaceSpec.addFunction(messageFromJson);
+  namespaceSpec = namespaceSpec.addFunction(messageFromObject);
 
   if (messageDesc.enumType.length !== 0) {
     let index = 0;
