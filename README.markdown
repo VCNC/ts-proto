@@ -65,7 +65,8 @@ Building
 
 `ts-proto` does not use `pbjs` at runtime, but we do use it in the `ts-proto` build process (to bootstrap the types used to parse the incoming protobuf metadata types, as well as for the test suite to ensure the `ts-proto` implementations match the `ts-proto`).
 
-After running `yarn install`, if you need to create bootstrap types, run `./pbjs.sh`.
+After running `yarn install`, if you need to edit google/protobug/*.proto, run `./pbjs.sh` then *remove prototype.oneOfIndex line*
+(because pbjs doesn't respect optional int, there ie no way we can know if the field is in oneOf)
 
 After making changes to `ts-proto`, you can run `./sample/createSample.sh` to re-compile sample.proto.
 
@@ -88,8 +89,6 @@ There are some *strong* assumptions about server side's protocol buffer's JSON E
 
 Todo
 ====
-
-* add javaDoc style comment to oneOf
 
 Types
 ============

@@ -151,6 +151,10 @@ function generateInterfaceDeclaration(
       type.type,
       type.isOptional
     );
+    if (fieldDesc.oneofIndex != null) {
+      let oneOfName = messageDesc.oneofDecl[fieldDesc.oneofIndex].name;
+      prop = prop.addJavadoc(`OneOf-${oneOfName}\n`)
+    }
     const info = sourceInfo.lookup(Fields.message.field, index++);
     maybeAddComment(info, text => (prop = prop.addJavadoc(text)));
 
