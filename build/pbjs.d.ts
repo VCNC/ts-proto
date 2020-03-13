@@ -440,6 +440,7 @@ export namespace google {
             deprecated?: (boolean|null);
             mapEntry?: (boolean|null);
             uninterpretedOption?: (google.protobuf.UninterpretedOption[]|null);
+            clientDeprecatedMessage?: (boolean|null);
         }
 
         class MessageOptions implements IMessageOptions {
@@ -449,6 +450,7 @@ export namespace google {
             public deprecated: boolean;
             public mapEntry: boolean;
             public uninterpretedOption: google.protobuf.UninterpretedOption[];
+            public clientDeprecatedMessage: boolean;
             public static create(properties?: google.protobuf.IMessageOptions): google.protobuf.MessageOptions;
             public static encode(message: google.protobuf.MessageOptions, writer?: $protobuf.Writer): $protobuf.Writer;
             public static encodeDelimited(message: google.protobuf.MessageOptions, writer?: $protobuf.Writer): $protobuf.Writer;
@@ -468,6 +470,7 @@ export namespace google {
             deprecated?: (boolean|null);
             weak?: (boolean|null);
             uninterpretedOption?: (google.protobuf.UninterpretedOption[]|null);
+            clientDeprecatedField?: (boolean|null);
         }
 
         class FieldOptions implements IFieldOptions {
@@ -479,6 +482,7 @@ export namespace google {
             public deprecated: boolean;
             public weak: boolean;
             public uninterpretedOption: google.protobuf.UninterpretedOption[];
+            public clientDeprecatedField: boolean;
             public static create(properties?: google.protobuf.IFieldOptions): google.protobuf.FieldOptions;
             public static encode(message: google.protobuf.FieldOptions, writer?: $protobuf.Writer): $protobuf.Writer;
             public static encodeDelimited(message: google.protobuf.FieldOptions, writer?: $protobuf.Writer): $protobuf.Writer;
@@ -527,6 +531,7 @@ export namespace google {
             allowAlias?: (boolean|null);
             deprecated?: (boolean|null);
             uninterpretedOption?: (google.protobuf.UninterpretedOption[]|null);
+            clientDeprecatedEnum?: (boolean|null);
         }
 
         class EnumOptions implements IEnumOptions {
@@ -534,6 +539,7 @@ export namespace google {
             public allowAlias: boolean;
             public deprecated: boolean;
             public uninterpretedOption: google.protobuf.UninterpretedOption[];
+            public clientDeprecatedEnum: boolean;
             public static create(properties?: google.protobuf.IEnumOptions): google.protobuf.EnumOptions;
             public static encode(message: google.protobuf.EnumOptions, writer?: $protobuf.Writer): $protobuf.Writer;
             public static encodeDelimited(message: google.protobuf.EnumOptions, writer?: $protobuf.Writer): $protobuf.Writer;
@@ -548,12 +554,14 @@ export namespace google {
         interface IEnumValueOptions {
             deprecated?: (boolean|null);
             uninterpretedOption?: (google.protobuf.UninterpretedOption[]|null);
+            clientDeprecatedEnumValue?: (boolean|null);
         }
 
         class EnumValueOptions implements IEnumValueOptions {
             constructor(properties?: google.protobuf.IEnumValueOptions);
             public deprecated: boolean;
             public uninterpretedOption: google.protobuf.UninterpretedOption[];
+            public clientDeprecatedEnumValue: boolean;
             public static create(properties?: google.protobuf.IEnumValueOptions): google.protobuf.EnumValueOptions;
             public static encode(message: google.protobuf.EnumValueOptions, writer?: $protobuf.Writer): $protobuf.Writer;
             public static encodeDelimited(message: google.protobuf.EnumValueOptions, writer?: $protobuf.Writer): $protobuf.Writer;

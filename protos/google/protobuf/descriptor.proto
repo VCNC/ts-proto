@@ -500,6 +500,8 @@ message MessageOptions {
   // The parser stores options it doesn't recognize here. See above.
   repeated UninterpretedOption uninterpreted_option = 999;
 
+  optional bool client_deprecated_message = 50001;
+
   // Clients can define custom options in extensions of this message. See above.
   extensions 1000 to max;
 }
@@ -591,6 +593,8 @@ message FieldOptions {
   // The parser stores options it doesn't recognize here. See above.
   repeated UninterpretedOption uninterpreted_option = 999;
 
+  optional bool client_deprecated_field = 50001;
+
   // Clients can define custom options in extensions of this message. See above.
   extensions 1000 to max;
 
@@ -622,6 +626,8 @@ message EnumOptions {
   // The parser stores options it doesn't recognize here. See above.
   repeated UninterpretedOption uninterpreted_option = 999;
 
+  optional bool client_deprecated_enum = 50001;
+
   // Clients can define custom options in extensions of this message. See above.
   extensions 1000 to max;
 }
@@ -635,6 +641,8 @@ message EnumValueOptions {
 
   // The parser stores options it doesn't recognize here. See above.
   repeated UninterpretedOption uninterpreted_option = 999;
+
+  optional bool client_deprecated_enum_value = 50001;
 
   // Clients can define custom options in extensions of this message. See above.
   extensions 1000 to max;

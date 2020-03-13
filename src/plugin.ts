@@ -16,7 +16,8 @@ async function main() {
   const typeMap = createTypeMap(request, optionsFromParameter(request.parameter));
   const files = request.protoFile.filter( file => {
     // ignore google.protobuf package
-    // because for reason i don't know, google/protobuf/descriptor.proto is passed on to this plugin
+    // because client deprecation option is added to descriptor in proto file, google/protobuf/descriptor.proto is passed on to this plugin
+    // the purpose of import is only for extension, so descriptor.proto does not need to be in the generated file.
     return file.package !== 'google.protobuf'
   }).map(file => {
     const spec = generateFile(typeMap, file, request.parameter);

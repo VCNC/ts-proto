@@ -4861,6 +4861,7 @@
                  * @property {boolean|null} [deprecated] MessageOptions deprecated
                  * @property {boolean|null} [mapEntry] MessageOptions mapEntry
                  * @property {Array.<google.protobuf.UninterpretedOption>|null} [uninterpretedOption] MessageOptions uninterpretedOption
+                 * @property {boolean|null} [clientDeprecatedMessage] MessageOptions clientDeprecatedMessage
                  */
     
                 /**
@@ -4920,6 +4921,14 @@
                 MessageOptions.prototype.uninterpretedOption = $util.emptyArray;
     
                 /**
+                 * MessageOptions clientDeprecatedMessage.
+                 * @member {boolean} clientDeprecatedMessage
+                 * @memberof google.protobuf.MessageOptions
+                 * @instance
+                 */
+                MessageOptions.prototype.clientDeprecatedMessage = false;
+    
+                /**
                  * Creates a new MessageOptions instance using the specified properties.
                  * @function create
                  * @memberof google.protobuf.MessageOptions
@@ -4954,6 +4963,8 @@
                     if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                         for (var i = 0; i < message.uninterpretedOption.length; ++i)
                             $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
+                    if (message.clientDeprecatedMessage != null && message.hasOwnProperty("clientDeprecatedMessage"))
+                        writer.uint32(/* id 50001, wireType 0 =*/400008).bool(message.clientDeprecatedMessage);
                     return writer;
                 };
     
@@ -5004,6 +5015,9 @@
                             if (!(message.uninterpretedOption && message.uninterpretedOption.length))
                                 message.uninterpretedOption = [];
                             message.uninterpretedOption.push($root.google.protobuf.UninterpretedOption.decode(reader, reader.uint32()));
+                            break;
+                        case 50001:
+                            message.clientDeprecatedMessage = reader.bool();
                             break;
                         default:
                             reader.skipType(tag & 7);
@@ -5061,6 +5075,9 @@
                                 return "uninterpretedOption." + error;
                         }
                     }
+                    if (message.clientDeprecatedMessage != null && message.hasOwnProperty("clientDeprecatedMessage"))
+                        if (typeof message.clientDeprecatedMessage !== "boolean")
+                            return "clientDeprecatedMessage: boolean expected";
                     return null;
                 };
     
@@ -5094,6 +5111,8 @@
                             message.uninterpretedOption[i] = $root.google.protobuf.UninterpretedOption.fromObject(object.uninterpretedOption[i]);
                         }
                     }
+                    if (object.clientDeprecatedMessage != null)
+                        message.clientDeprecatedMessage = Boolean(object.clientDeprecatedMessage);
                     return message;
                 };
     
@@ -5117,6 +5136,7 @@
                         object.noStandardDescriptorAccessor = false;
                         object.deprecated = false;
                         object.mapEntry = false;
+                        object.clientDeprecatedMessage = false;
                     }
                     if (message.messageSetWireFormat != null && message.hasOwnProperty("messageSetWireFormat"))
                         object.messageSetWireFormat = message.messageSetWireFormat;
@@ -5131,6 +5151,8 @@
                         for (var j = 0; j < message.uninterpretedOption.length; ++j)
                             object.uninterpretedOption[j] = $root.google.protobuf.UninterpretedOption.toObject(message.uninterpretedOption[j], options);
                     }
+                    if (message.clientDeprecatedMessage != null && message.hasOwnProperty("clientDeprecatedMessage"))
+                        object.clientDeprecatedMessage = message.clientDeprecatedMessage;
                     return object;
                 };
     
@@ -5161,6 +5183,7 @@
                  * @property {boolean|null} [deprecated] FieldOptions deprecated
                  * @property {boolean|null} [weak] FieldOptions weak
                  * @property {Array.<google.protobuf.UninterpretedOption>|null} [uninterpretedOption] FieldOptions uninterpretedOption
+                 * @property {boolean|null} [clientDeprecatedField] FieldOptions clientDeprecatedField
                  */
     
                 /**
@@ -5236,6 +5259,14 @@
                 FieldOptions.prototype.uninterpretedOption = $util.emptyArray;
     
                 /**
+                 * FieldOptions clientDeprecatedField.
+                 * @member {boolean} clientDeprecatedField
+                 * @memberof google.protobuf.FieldOptions
+                 * @instance
+                 */
+                FieldOptions.prototype.clientDeprecatedField = false;
+    
+                /**
                  * Creates a new FieldOptions instance using the specified properties.
                  * @function create
                  * @memberof google.protobuf.FieldOptions
@@ -5274,6 +5305,8 @@
                     if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                         for (var i = 0; i < message.uninterpretedOption.length; ++i)
                             $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
+                    if (message.clientDeprecatedField != null && message.hasOwnProperty("clientDeprecatedField"))
+                        writer.uint32(/* id 50001, wireType 0 =*/400008).bool(message.clientDeprecatedField);
                     return writer;
                 };
     
@@ -5330,6 +5363,9 @@
                             if (!(message.uninterpretedOption && message.uninterpretedOption.length))
                                 message.uninterpretedOption = [];
                             message.uninterpretedOption.push($root.google.protobuf.UninterpretedOption.decode(reader, reader.uint32()));
+                            break;
+                        case 50001:
+                            message.clientDeprecatedField = reader.bool();
                             break;
                         default:
                             reader.skipType(tag & 7);
@@ -5405,6 +5441,9 @@
                                 return "uninterpretedOption." + error;
                         }
                     }
+                    if (message.clientDeprecatedField != null && message.hasOwnProperty("clientDeprecatedField"))
+                        if (typeof message.clientDeprecatedField !== "boolean")
+                            return "clientDeprecatedField: boolean expected";
                     return null;
                 };
     
@@ -5466,6 +5505,8 @@
                             message.uninterpretedOption[i] = $root.google.protobuf.UninterpretedOption.fromObject(object.uninterpretedOption[i]);
                         }
                     }
+                    if (object.clientDeprecatedField != null)
+                        message.clientDeprecatedField = Boolean(object.clientDeprecatedField);
                     return message;
                 };
     
@@ -5491,6 +5532,7 @@
                         object.lazy = false;
                         object.jstype = options.enums === String ? "JS_NORMAL" : 0;
                         object.weak = false;
+                        object.clientDeprecatedField = false;
                     }
                     if (message.ctype != null && message.hasOwnProperty("ctype"))
                         object.ctype = options.enums === String ? $root.google.protobuf.FieldOptions.CType[message.ctype] : message.ctype;
@@ -5509,6 +5551,8 @@
                         for (var j = 0; j < message.uninterpretedOption.length; ++j)
                             object.uninterpretedOption[j] = $root.google.protobuf.UninterpretedOption.toObject(message.uninterpretedOption[j], options);
                     }
+                    if (message.clientDeprecatedField != null && message.hasOwnProperty("clientDeprecatedField"))
+                        object.clientDeprecatedField = message.clientDeprecatedField;
                     return object;
                 };
     
@@ -5775,6 +5819,7 @@
                  * @property {boolean|null} [allowAlias] EnumOptions allowAlias
                  * @property {boolean|null} [deprecated] EnumOptions deprecated
                  * @property {Array.<google.protobuf.UninterpretedOption>|null} [uninterpretedOption] EnumOptions uninterpretedOption
+                 * @property {boolean|null} [clientDeprecatedEnum] EnumOptions clientDeprecatedEnum
                  */
     
                 /**
@@ -5818,6 +5863,14 @@
                 EnumOptions.prototype.uninterpretedOption = $util.emptyArray;
     
                 /**
+                 * EnumOptions clientDeprecatedEnum.
+                 * @member {boolean} clientDeprecatedEnum
+                 * @memberof google.protobuf.EnumOptions
+                 * @instance
+                 */
+                EnumOptions.prototype.clientDeprecatedEnum = false;
+    
+                /**
                  * Creates a new EnumOptions instance using the specified properties.
                  * @function create
                  * @memberof google.protobuf.EnumOptions
@@ -5848,6 +5901,8 @@
                     if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                         for (var i = 0; i < message.uninterpretedOption.length; ++i)
                             $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
+                    if (message.clientDeprecatedEnum != null && message.hasOwnProperty("clientDeprecatedEnum"))
+                        writer.uint32(/* id 50001, wireType 0 =*/400008).bool(message.clientDeprecatedEnum);
                     return writer;
                 };
     
@@ -5892,6 +5947,9 @@
                             if (!(message.uninterpretedOption && message.uninterpretedOption.length))
                                 message.uninterpretedOption = [];
                             message.uninterpretedOption.push($root.google.protobuf.UninterpretedOption.decode(reader, reader.uint32()));
+                            break;
+                        case 50001:
+                            message.clientDeprecatedEnum = reader.bool();
                             break;
                         default:
                             reader.skipType(tag & 7);
@@ -5943,6 +6001,9 @@
                                 return "uninterpretedOption." + error;
                         }
                     }
+                    if (message.clientDeprecatedEnum != null && message.hasOwnProperty("clientDeprecatedEnum"))
+                        if (typeof message.clientDeprecatedEnum !== "boolean")
+                            return "clientDeprecatedEnum: boolean expected";
                     return null;
                 };
     
@@ -5972,6 +6033,8 @@
                             message.uninterpretedOption[i] = $root.google.protobuf.UninterpretedOption.fromObject(object.uninterpretedOption[i]);
                         }
                     }
+                    if (object.clientDeprecatedEnum != null)
+                        message.clientDeprecatedEnum = Boolean(object.clientDeprecatedEnum);
                     return message;
                 };
     
@@ -5993,6 +6056,7 @@
                     if (options.defaults) {
                         object.allowAlias = false;
                         object.deprecated = false;
+                        object.clientDeprecatedEnum = false;
                     }
                     if (message.allowAlias != null && message.hasOwnProperty("allowAlias"))
                         object.allowAlias = message.allowAlias;
@@ -6003,6 +6067,8 @@
                         for (var j = 0; j < message.uninterpretedOption.length; ++j)
                             object.uninterpretedOption[j] = $root.google.protobuf.UninterpretedOption.toObject(message.uninterpretedOption[j], options);
                     }
+                    if (message.clientDeprecatedEnum != null && message.hasOwnProperty("clientDeprecatedEnum"))
+                        object.clientDeprecatedEnum = message.clientDeprecatedEnum;
                     return object;
                 };
     
@@ -6028,6 +6094,7 @@
                  * @interface IEnumValueOptions
                  * @property {boolean|null} [deprecated] EnumValueOptions deprecated
                  * @property {Array.<google.protobuf.UninterpretedOption>|null} [uninterpretedOption] EnumValueOptions uninterpretedOption
+                 * @property {boolean|null} [clientDeprecatedEnumValue] EnumValueOptions clientDeprecatedEnumValue
                  */
     
                 /**
@@ -6063,6 +6130,14 @@
                 EnumValueOptions.prototype.uninterpretedOption = $util.emptyArray;
     
                 /**
+                 * EnumValueOptions clientDeprecatedEnumValue.
+                 * @member {boolean} clientDeprecatedEnumValue
+                 * @memberof google.protobuf.EnumValueOptions
+                 * @instance
+                 */
+                EnumValueOptions.prototype.clientDeprecatedEnumValue = false;
+    
+                /**
                  * Creates a new EnumValueOptions instance using the specified properties.
                  * @function create
                  * @memberof google.protobuf.EnumValueOptions
@@ -6091,6 +6166,8 @@
                     if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                         for (var i = 0; i < message.uninterpretedOption.length; ++i)
                             $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
+                    if (message.clientDeprecatedEnumValue != null && message.hasOwnProperty("clientDeprecatedEnumValue"))
+                        writer.uint32(/* id 50001, wireType 0 =*/400008).bool(message.clientDeprecatedEnumValue);
                     return writer;
                 };
     
@@ -6132,6 +6209,9 @@
                             if (!(message.uninterpretedOption && message.uninterpretedOption.length))
                                 message.uninterpretedOption = [];
                             message.uninterpretedOption.push($root.google.protobuf.UninterpretedOption.decode(reader, reader.uint32()));
+                            break;
+                        case 50001:
+                            message.clientDeprecatedEnumValue = reader.bool();
                             break;
                         default:
                             reader.skipType(tag & 7);
@@ -6180,6 +6260,9 @@
                                 return "uninterpretedOption." + error;
                         }
                     }
+                    if (message.clientDeprecatedEnumValue != null && message.hasOwnProperty("clientDeprecatedEnumValue"))
+                        if (typeof message.clientDeprecatedEnumValue !== "boolean")
+                            return "clientDeprecatedEnumValue: boolean expected";
                     return null;
                 };
     
@@ -6207,6 +6290,8 @@
                             message.uninterpretedOption[i] = $root.google.protobuf.UninterpretedOption.fromObject(object.uninterpretedOption[i]);
                         }
                     }
+                    if (object.clientDeprecatedEnumValue != null)
+                        message.clientDeprecatedEnumValue = Boolean(object.clientDeprecatedEnumValue);
                     return message;
                 };
     
@@ -6225,8 +6310,10 @@
                     var object = {};
                     if (options.arrays || options.defaults)
                         object.uninterpretedOption = [];
-                    if (options.defaults)
+                    if (options.defaults) {
                         object.deprecated = false;
+                        object.clientDeprecatedEnumValue = false;
+                    }
                     if (message.deprecated != null && message.hasOwnProperty("deprecated"))
                         object.deprecated = message.deprecated;
                     if (message.uninterpretedOption && message.uninterpretedOption.length) {
@@ -6234,6 +6321,8 @@
                         for (var j = 0; j < message.uninterpretedOption.length; ++j)
                             object.uninterpretedOption[j] = $root.google.protobuf.UninterpretedOption.toObject(message.uninterpretedOption[j], options);
                     }
+                    if (message.clientDeprecatedEnumValue != null && message.hasOwnProperty("clientDeprecatedEnumValue"))
+                        object.clientDeprecatedEnumValue = message.clientDeprecatedEnumValue;
                     return object;
                 };
     

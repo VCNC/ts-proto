@@ -13,7 +13,8 @@ import { google } from '../build/pbjs';
 import {
   basicTypeName,
   detectMapType,
-  getMapValueFieldDesc, is64BitInteger,
+  getMapValueFieldDesc,
+  is64BitInteger,
   isEnum,
   isMessage,
   isRepeated,
@@ -61,14 +62,22 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   let index = 0;
   for (const enumDesc of fileDesc.enumType) {
     const nestedSourceInfo = sourceInfo.open(Fields.file.enum_type, index++);
-    const [enumSpec, enumToJson] = generateEnum(enumDesc, nestedSourceInfo, options)
+    const enumGenerated = generateEnum(enumDesc, nestedSourceInfo, options);
+    if (enumGenerated == null) {
+      continue;
+    }
+    const [enumSpec, enumToJson] = enumGenerated;
     file = file.addEnum(enumSpec).addFunction(enumToJson)
   }
 
   index = 0;
   for (const message of fileDesc.messageType) {
     const nestedSourceInfo = sourceInfo.open(Fields.file.message_type, index++);
-    const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, message, nestedSourceInfo, options);
+    const nestedInterfaceGenerated = generateInterfaceDeclaration(typeMap, message, nestedSourceInfo, options);
+    if (nestedInterfaceGenerated == null) {
+      continue;
+    }
+    const [nestedInterfaceSpec, nestedNamespaceSpec] = nestedInterfaceGenerated;
     file = file.addInterface(nestedInterfaceSpec);
     if (nestedNamespaceSpec != null) {
       file = file.addNamespace(nestedNamespaceSpec);
@@ -78,7 +87,10 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   return file;
 }
 
-function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): [EnumSpec, FunctionSpec] {
+function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): [EnumSpec, FunctionSpec] | undefined {
+  if (enumDesc.options?.clientDeprecatedEnum === true) {
+    return undefined;
+  }
   let name = maybeSnakeToCamel(enumDesc.name, options)
   let spec = EnumSpec.create(name).addModifiers(Modifier.CONST, Modifier.EXPORT);
   let toJsonSpec = FunctionSpec.create(name+'_fromString')
@@ -90,6 +102,9 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
 
   let index = 0;
   for (const valueDesc of enumDesc.value) {
+    if (valueDesc.options?.clientDeprecatedEnumValue === true) {
+      return undefined;
+    }
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     let javaDoc: string | undefined = undefined;
     maybeAddComment(info, text => (javaDoc = text));
@@ -109,7 +124,10 @@ function generateInterfaceDeclaration(
   messageDesc: DescriptorProto,
   sourceInfo: SourceInfo,
   options: Options
-): [InterfaceSpec, NamespaceSpec | undefined] {
+): [InterfaceSpec, NamespaceSpec | undefined] | undefined {
+  if (messageDesc?.options?.clientDeprecatedMessage === true) {
+    return undefined
+  }
   let messageName = maybeSnakeToCamel(messageDesc.name, options);
   let message = InterfaceSpec.create(messageName).addModifiers(Modifier.EXPORT);
   let messageFromObject = FunctionSpec.create('fromObject')
@@ -122,6 +140,9 @@ function generateInterfaceDeclaration(
 
   let index = 0;
   for (const fieldDesc of messageDesc.field) {
+    if (fieldDesc.options?.clientDeprecatedField === true) {
+      continue;
+    }
     let type = toTypeName(typeMap, messageDesc, fieldDesc, options);
     let basicType = basicTypeName(typeMap, fieldDesc, options);
     let fieldName = maybeSnakeToCamel(fieldDesc.name, options);
@@ -160,7 +181,7 @@ function generateInterfaceDeclaration(
           } else if (isMessage(valueFieldDesc)) {
             messageFromObject = messageFromObject.addCode(`%T.fromObject(v)\n`, valueType)
           } else if (is64BitInteger(valueFieldDesc)) {
-            messageFromObject = messageFromObject.addCode(`parseInt(v)\n`)
+            messageFromObject = messageFromObject.addCode(`parseInt(v as string)\n`)
           }
 
           messageFromObject = messageFromObject.unindent()
@@ -209,7 +230,11 @@ function generateInterfaceDeclaration(
     let index = 0;
     for (const enumDesc of messageDesc.enumType) {
       const nestedSourceInfo = sourceInfo.open(Fields.message.enum_type, index++);
-      const [enumSpec, enumToJson] = generateEnum(enumDesc, nestedSourceInfo, options)
+      const enumGenerated = generateEnum(enumDesc, nestedSourceInfo, options);
+      if( enumGenerated == null) {
+        continue;
+      }
+      const [enumSpec, enumToJson] = enumGenerated;
       namespaceSpec = namespaceSpec
         .addEnum(enumSpec)
         .addFunction(enumToJson)
@@ -223,7 +248,11 @@ function generateInterfaceDeclaration(
         continue;
       }
       const nestedSourceInfo = sourceInfo.open(Fields.message.nested_type, index++);
-      const [nestedInterfaceSpec, nestedNamespaceSpec] = generateInterfaceDeclaration(typeMap, nestedMessageDesc, nestedSourceInfo, options)
+      const nestedInterfaceGenerated = generateInterfaceDeclaration(typeMap, nestedMessageDesc, nestedSourceInfo, options);
+      if (nestedInterfaceGenerated == null) {
+        continue;
+      }
+      const [nestedInterfaceSpec, nestedNamespaceSpec] = nestedInterfaceGenerated;
       namespaceSpec = namespaceSpec.addInterface(nestedInterfaceSpec)
       if (nestedNamespaceSpec != null) {
         namespaceSpec = namespaceSpec.addNamespace(nestedNamespaceSpec)
