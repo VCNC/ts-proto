@@ -36,13 +36,10 @@ export function upperFirst(name: string): string {
 }
 
 export function optionsFromParameter(parameter: string): Options {
-  const options: Options = { 
-    useContext: false, 
-    snakeToCamel: true, 
+  const options: Options = {
+    useContext: false,
+    snakeToCamel: true,
     forceLong: false,
-    outputEncodeMethods: true,
-    outputJsonMethods: true,
-    outputClientImpl: true,
   };
 
   if (parameter) {
@@ -54,15 +51,6 @@ export function optionsFromParameter(parameter: string): Options {
     }
     if (parameter.includes('forceLong=true')) {
       options.forceLong = true;
-    }
-    if (parameter.includes('outputEncodeMethods=false')) {
-      options.outputEncodeMethods = false;
-    }
-    if (parameter.includes('outputJsonMethods=false')) {
-      options.outputJsonMethods = false;
-    }
-    if (parameter.includes('outputClientImpl=false')) {
-      options.outputClientImpl = false;
     }
   }
   return options;

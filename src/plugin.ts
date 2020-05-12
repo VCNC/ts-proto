@@ -5,7 +5,7 @@ import { generateFile } from './main';
 import { createTypeMap } from './types';
 import CodeGeneratorRequest = google.protobuf.compiler.CodeGeneratorRequest;
 import CodeGeneratorResponse = google.protobuf.compiler.CodeGeneratorResponse;
-import { FileSpec } from 'ts-poet';
+import { FileSpec } from './ts-poet';
 
 // this would be the plugin called by the protoc compiler
 async function main() {
@@ -14,7 +14,12 @@ async function main() {
   // const request = CodeGeneratorRequest.fromObject(json);
   const request = CodeGeneratorRequest.decode(stdin);
   const typeMap = createTypeMap(request, optionsFromParameter(request.parameter));
-  const files = request.protoFile.map(file => {
+  const files = request.protoFile.filter( file => {
+    // ignore google.protobuf package
+    // because client deprecation option is added to descriptor in proto file, google/protobuf/descriptor.proto is passed on to this plugin
+    // the purpose of import is only for extension, so descriptor.proto does not need to be in the generated file.
+    return file.package !== 'google.protobuf'
+  }).map(file => {
     const spec = generateFile(typeMap, file, request.parameter);
     return new CodeGeneratorResponse.File({
       name: spec.path,

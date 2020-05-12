@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    bool client_deprecated_field = 50001;
+}
+
+extend google.protobuf.MessageOptions {
+    bool client_deprecated_message = 50001;
+}
+
+extend google.protobuf.EnumOptions {
+    bool client_deprecated_enum = 50001;
+}
+
+extend google.protobuf.EnumValueOptions {
+    bool client_deprecated_enum_value = 50001;
+}
+
+enum SampleEnum {
+    LOREM = 0;
+    IPSUM = 1;
+}
+
+message ParentMessage {
+    message ChildMessage {
+        ChildMessage recursive = 1;
+        ChildMessage deprecated = 2 [(client_deprecated_field) = true];
+    }
+
+    enum ChildEnum {
+        CHILD_LOREM = 0;
+        CHILD_IPSUM = 1;
+        CHILD_DEPRECATED = 2 [(client_deprecated_enum_value) = true];
+    }
+    double double_test = 1;
+    float float_test = 2;
+    int32 int32_test = 3;
+    int64 int64_test = 4;
+    bool bool_test = 5;
+    string string_test = 6;
+    repeated bool bool_array_test = 7;
+    repeated ChildMessage message_array = 8;
+}
+
+message SampleMessage {
+    map<string, string> string_map = 9;
+    map<string, SampleEnum> enum_map = 10;
+    map<string, ParentMessage.ChildMessage> message_map = 11;
+    map<string, uint64> int64_map = 12;
+}
+
+message Deprecated {
+    option (client_deprecated_message) = true;
+    bool tmp = 1;
+}
