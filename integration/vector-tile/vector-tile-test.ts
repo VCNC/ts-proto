@@ -8,7 +8,7 @@ import { createTypeMap } from '../../src/types';
 import { optionsFromParameter } from '../../src/utils';
 import { generateFile } from '../../src/main';
 import { StringBuffer } from 'ts-poet/build/StringBuffer';
-import { google } from '../../build/pbjs';
+import { google } from '../../proto-plugin/pbjs';
 import CodeGeneratorRequest = google.protobuf.compiler.CodeGeneratorRequest;
 
 describe('vector-tile', () => {

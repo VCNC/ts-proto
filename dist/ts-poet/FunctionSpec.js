@@ -22,7 +22,6 @@ var Encloser;
     Encloser[Encloser["CLASS"] = 1] = "CLASS";
     Encloser[Encloser["INTERFACE"] = 2] = "INTERFACE";
 })(Encloser = exports.Encloser || (exports.Encloser = {}));
-/** A generated function declaration. */
 class FunctionSpec extends ts_imm_1.Imm {
     static create(name) {
         return new FunctionSpec({
@@ -47,13 +46,6 @@ class FunctionSpec extends ts_imm_1.Imm {
     static createIndexable() {
         return FunctionSpec.create(INDEXABLE);
     }
-    /*
-    init {
-      require(body.isEmpty() || Modifier.ABSTRACT !in builder.modifiers) {
-        "abstract function ${builder.name} cannot have code"
-      }
-    }
-    */
     abstract() {
         return FunctionSpec.create(this.name)
             .addModifiers(Modifier_1.Modifier.ABSTRACT)
@@ -120,7 +112,6 @@ class FunctionSpec extends ts_imm_1.Imm {
         });
     }
     returns(returnType) {
-        // check(!name.isConstructor) { "$name cannot have a return type" }
         return this.copy({
             returnType: TypeNames_1.TypeNames.anyTypeMaybeString(returnType),
         });
@@ -134,7 +125,6 @@ class FunctionSpec extends ts_imm_1.Imm {
         let param;
         if (typeof parameterSpec === 'string') {
             const name = parameterSpec;
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const type = TypeNames_1.TypeNames.anyTypeMaybeString(maybeType);
             const data = maybeData || {};
             param = ParameterSpec_1.ParameterSpec.create(name, type).copy(data);
@@ -161,19 +151,16 @@ class FunctionSpec extends ts_imm_1.Imm {
         });
     }
     addCode(format, ...args) {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.add(format, ...args),
         });
     }
     addNamedCode(format, args) {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.addNamed(format, args),
         });
     }
     addCodeBlock(codeBlock) {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.addCode(codeBlock),
         });
@@ -183,28 +170,17 @@ class FunctionSpec extends ts_imm_1.Imm {
             body: this.body.add('// ' + format + '\n', ...args),
         });
     }
-    /**
-     * @param controlFlow the control flow construct and its code, such as "if (foo == 5)".
-     * * Shouldn't contain braces or newline characters.
-     */
     beginControlFlow(controlFlow, ...args) {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.beginControlFlow(controlFlow, ...args),
         });
     }
-    /**
-     * @param controlFlow the control flow construct and its code, such as "else if (foo == 10)".
-     * *     Shouldn't contain braces or newline characters.
-     */
     nextControlFlow(controlFlow, ...args) {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.nextControlFlow(controlFlow, ...args),
         });
     }
     endControlFlow() {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.endControlFlow(),
         });
@@ -230,7 +206,6 @@ class FunctionSpec extends ts_imm_1.Imm {
         });
     }
     addStatement(format, ...args) {
-        // modifiers -= Modifier.ABSTRACT
         return this.copy({
             body: this.body.addStatement(format, ...args),
         });

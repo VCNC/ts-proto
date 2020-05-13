@@ -1,4 +1,4 @@
-import { google } from '../build/pbjs';
+import { google } from '../proto-plugin/pbjs';
 import { messageToTypeName } from '../src/types';
 import { TypeNames } from 'ts-poet';
 import DescriptorProto = google.protobuf.DescriptorProto;

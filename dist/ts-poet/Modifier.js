@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-/** Available declaration modifiers. */
 var Modifier;
 (function (Modifier) {
     Modifier["ASYNC"] = "async";
@@ -18,7 +17,6 @@ var Modifier;
     Modifier["LET"] = "let";
     Modifier["VAR"] = "var";
 })(Modifier = exports.Modifier || (exports.Modifier = {}));
-// should try a tsc transformer
 exports.ModifierOrder = [
     Modifier.EXPORT,
     Modifier.DECLARE,

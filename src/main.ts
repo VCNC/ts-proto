@@ -9,7 +9,7 @@ import {
   PropertySpec,
   TypeNames
 } from './ts-poet';
-import { google } from '../build/pbjs';
+import { google } from '../proto-plugin/pbjs';
 import {
   basicTypeName,
   detectMapType,

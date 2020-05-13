@@ -61,7 +61,6 @@ class EnumSpec extends ts_imm_1.Imm {
         return this;
     }
     addConstant(name, initializer, javaDoc) {
-        // require(name.isName) { "not a valid enum constant: $name" }
         this.constants.set(name, { value: typeof initializer === 'string' ? CodeBlock_1.CodeBlock.of(initializer) : initializer, javaDoc: javaDoc });
         return this;
     }

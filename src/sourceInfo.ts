@@ -1,4 +1,4 @@
-import { google } from '../build/pbjs';
+import { google } from '../proto-plugin/pbjs';
 import FileDescriptorProto = google.protobuf.FileDescriptorProto;
 
 /** This type is expecting a value from the Fields constant. */

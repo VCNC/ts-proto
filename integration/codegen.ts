@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'fs';
 import { parse } from 'path';
 import { promisify } from 'util';
-import { google } from '../build/pbjs';
+import { google } from '../proto-plugin/pbjs';
 import { generateFile } from '../src/main';
 import { createTypeMap } from '../src/types';
 import { optionsFromParameter } from '../src/utils';

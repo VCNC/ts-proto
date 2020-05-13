@@ -9,10 +9,12 @@
   },
   "files": [
     "dist/**",
+    "proto-plugin/**",
     "protoc-gen-ts_proto"
   ],
   "scripts": {
     "build": "tsc",
+    "build:release": "tsc --project tsconfig.release.json",
     "setup": "./pbjs.sh && ./integration/pbjs.sh && ./integration/update-bins.sh && ./integration/codegen.sh",
     "test": "jest -c jest.config.js"
   },

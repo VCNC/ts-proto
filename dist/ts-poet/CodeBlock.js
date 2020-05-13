@@ -22,33 +22,6 @@ const NO_ARG_PLACEHOLDERS = ['%W', '%>', '%<', '%[', '%]'];
 function isNoArgPlaceholder(c) {
     return ['%', '>', '<', '[', ']', 'W'].indexOf(c) > -1;
 }
-/**
- * A fragment of a .ts file, potentially containing declarations, statements, and documentation.
- * Code blocks are not necessarily well-formed TypeScript code, and are not validated. This class
- * assumes tsc will check correctness later!
- *
- * Code blocks support placeholders like [java.text.Format]. This class uses a percent sign
- * `%` but has its own set of permitted placeholders:
- *
- *  * `%L` emits a *literal* value with no escaping. Arguments for literals may be strings,
- *    primitives, [type declarations][ClassSpec], [decorators][DecoratorSpec] and even other code
- *    blocks.
- *  * `%N` emits a *name*, using name collision avoidance where necessary. Arguments for names may
- *    be strings (actually any [character sequence][CharSequence]), [parameters][ParameterSpec],
- *    [properties][PropertySpec], [functions][FunSpec], and [types][ClassSpec].
- *  * `%S` escapes the value as a *string*, wraps it with double quotes, and emits that. For
- *    example, `6" sandwich` is emitted `"6\" sandwich"`.
- *  * `%T` emits a *type* reference. Types will be imported if possible. Arguments for types may be
- *    [classes][Class], [type mirrors][javax.lang.model.type.TypeMirror], and
- *    [elements][javax.lang.model.element.Element].
- *  * `%%` emits a percent sign.
- *  * `%W` emits a space or a newline, depending on its position on the line. This prefers to wrap
- *    lines before 100 columns.
- *  * `%>` increases the indentation level.
- *  * `%<` decreases the indentation level.
- *  * `%[` begins a statement.
- *  * `%]` ends a statement.
- */
 class CodeBlock extends ts_imm_1.Imm {
     static of(format, ...args) {
         return CodeBlock.empty().add(format, ...args);
@@ -61,7 +34,6 @@ class CodeBlock extends ts_imm_1.Imm {
             trailer: undefined,
         });
     }
-    /** Returns a code block for doing multiline lambdas. */
     static lambda(...parameterNames) {
         return CodeBlock.empty()
             .add('(%L) => {\n', parameterNames.join(', '))
@@ -95,17 +67,9 @@ class CodeBlock extends ts_imm_1.Imm {
             formatParts: [...this.formatParts, '%<'],
         });
     }
-    /**
-     * @param controlFlow the control flow construct and its code, such as "if (foo == 5)".
-     *     Shouldn't contain braces or newline characters.
-     */
     beginControlFlow(controlFlow, ...args) {
         return this.add(`${controlFlow} {\n`, ...args).indent();
     }
-    /**
-     * @param controlFlow the control flow construct and its code, such as "else if (foo == 10)".
-     *     Shouldn't contain braces or newline characters.
-     */
     nextControlFlow(controlFlow, ...args) {
         return this.unindent()
             .add(`} ${controlFlow} {\n`, ...args)
@@ -166,19 +130,7 @@ class CodeBlock extends ts_imm_1.Imm {
     addTrailer(codeBlock) {
         return this.copy({ trailer: codeBlock });
     }
-    /**
-     * Add code with positional or relative arguments.
-     *
-     * Relative arguments map 1:1 with the placeholders in the format string.
-     *
-     * Positional arguments use an index after the placeholder to identify which argument index
-     * to use. For example, for a literal to reference the 3rd argument: "%3L" (1 based index)
-     *
-     * Mixing relative and positional arguments in a call to add is invalid and will result in an
-     * error.
-     */
     add(format, ...args) {
-        // keep some mutable state so we don't have to completely gut this
         const newFormatParts = [];
         const newArgs = [];
         const newSymbols = [];
@@ -198,8 +150,7 @@ class CodeBlock extends ts_imm_1.Imm {
                 p = nextP;
                 continue;
             }
-            p++; // '%'.
-            // Consume zero or more digits, leaving 'c' as the first non-digit char after the '%'.
+            p++;
             const indexStart = p;
             utils_1.check(p < format.length, `dangling format characters in '${format}'`);
             let c = format[p++];
@@ -208,19 +159,17 @@ class CodeBlock extends ts_imm_1.Imm {
                 c = format[p++];
             }
             const indexEnd = p - 1;
-            // If 'c' doesn't take an argument, we're done.
             if (isNoArgPlaceholder(c)) {
                 utils_1.check(indexStart === indexEnd, '%%, %>, %<, %[, %], and %W may not have an index');
                 newFormatParts.push(`%${c}`);
                 continue;
             }
-            // Find either the indexed argument, or the relative argument. (0-based).
             let index;
             if (indexStart < indexEnd) {
                 index = parseInt(format.substring(indexStart, indexEnd), 10) - 1;
                 hasIndexed = true;
                 if (args.length > 0) {
-                    indexedParameterCount[index % args.length]++; // modulo is needed, checked below anyway
+                    indexedParameterCount[index % args.length]++;
                 }
             }
             else {
@@ -254,19 +203,7 @@ class CodeBlock extends ts_imm_1.Imm {
             referencedSymbols: new Set([...this.referencedSymbols, ...newSymbols]),
         });
     }
-    /**
-     * Adds code using named arguments.
-     *
-     * Named arguments specify their name after the '%' followed by : and the corresponding type
-     * character. Argument names consist of characters in `a-z, A-Z, 0-9, and _` and must start
-     * with a lowercase character.
-     *
-     * For example, to refer to the type [java.lang.Integer] with the argument name `clazz` use a
-     * format string containing `%clazz:T` and include the key `clazz` with value
-     * `java.lang.Integer.class` in the argument map.
-     */
     addNamed(format, args) {
-        // keep some mutable state so we don't have to completely gut this
         const newFormatParts = [];
         const newArgs = [];
         const newSymbols = [];
@@ -298,7 +235,6 @@ class CodeBlock extends ts_imm_1.Imm {
                 newArgs.push(arg);
                 newFormatParts.push(`%${formatChar}`);
                 newSymbols.push(...symbols);
-                // ugly copy/paste from earlier line
                 const endIndex = Math.min(colon + 2, format.length);
                 p = endIndex;
             }
@@ -343,26 +279,16 @@ class CodeBlock extends ts_imm_1.Imm {
     toString() {
         return CodeWriter_1.CodeWriter.emitToString(this);
     }
-    /**
-     * Returns a code block with `prefix` stripped off, or null if this code block doesn't start with
-     * `prefix`.
-     *
-     * This is a pretty anyType implementation that might not cover cases like mismatched whitespace. We
-     * could offer something more lenient if necessary.
-     */
     withoutPrefix(prefix) {
         if (this.formatParts.length < prefix.formatParts.length || this.args.length < prefix.args.length) {
             return undefined;
         }
         let prefixArgCount = 0;
         let firstFormatPart;
-        // Walk through the formatParts of prefix to confirm that it's a of this.
         for (let index = 0; index < prefix.formatParts.length; index++) {
             const theirPart = prefix.formatParts[index] || '';
             const ourPart = this.formatParts[index] || '';
             if (ourPart !== theirPart) {
-                // We've found a format part that doesn't match. If this is the very last format part check
-                // for a string prefix match. If that doesn't match, we're done.
                 if (index === prefix.formatParts.length - 1 && ourPart.startsWith(theirPart)) {
                     firstFormatPart = ourPart.substring(theirPart.length);
                 }
@@ -370,15 +296,13 @@ class CodeBlock extends ts_imm_1.Imm {
                     return undefined;
                 }
             }
-            // If the matching format part has an argument, check that too.
             if (theirPart.startsWith('%') && !isNoArgPlaceholder(theirPart[1])) {
                 if (this.args[prefixArgCount] !== prefix.args[prefixArgCount]) {
-                    return undefined; // Argument doesn't match.
+                    return undefined;
                 }
                 prefixArgCount++;
             }
         }
-        // We found a prefix. Prepare the suffix as a result.
         const resultFormatParts = [];
         if (firstFormatPart) {
             resultFormatParts.push(firstFormatPart);
@@ -395,10 +319,6 @@ class CodeBlock extends ts_imm_1.Imm {
             args: resultArgs,
         });
     }
-    /**
-     * Returns a copy of the code block without leading and trailing no-arg placeholders
-     * (`%W`, `%<`, `%>`, `%[`, `%]`).
-     */
     trim() {
         let start = 0;
         let end = this.formatParts.length;
@@ -437,7 +357,6 @@ __decorate([
     ts_imm_1.imm
 ], CodeBlock.prototype, "trailer", void 0);
 exports.CodeBlock = CodeBlock;
-// And ugly gyration to turn the side-effect reference into a tuple
 function toTuple(o) {
     const symbols = [];
     const name = o.reference(new (class {
@@ -447,7 +366,6 @@ function toTuple(o) {
     })());
     return [name, symbols];
 }
-/** Look at `c` to tell what arg + related symbols we should add. */
 function formatToArgAndSymbols(format, c, arg) {
     switch (c) {
         case 'N':

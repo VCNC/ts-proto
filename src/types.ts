@@ -1,4 +1,4 @@
-import { google } from '../build/pbjs';
+import { google } from '../proto-plugin/pbjs';
 import { CodeBlock, Member, TypeName, TypeNames } from './ts-poet';
 import { Options, visit } from './main';
 import { fail } from './utils';
