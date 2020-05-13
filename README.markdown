@@ -23,7 +23,7 @@ Goals
 Example Types
 =============
 
-The generated types are interface, 
+The generated types are interface,
 
 ```typescript
 export interface Simple {
@@ -41,7 +41,7 @@ Along with `fromObject` and `Enum_fromString` method
 
 ```typescript
 export namespace Simple {
-  function fromObject(obj: any) : Simple { 
+  function fromObject(obj: any) : Simple {
     ...
   }
 };
@@ -65,10 +65,15 @@ Building
 
 `ts-proto` does not use `pbjs` at runtime, but we do use it in the `ts-proto` build process (to bootstrap the types used to parse the incoming protobuf metadata types, as well as for the test suite to ensure the `ts-proto` implementations match the `ts-proto`).
 
-After running `yarn install`, if you need to edit google/protobug/*.proto, run `./pbjs.sh` then *remove prototype.oneOfIndex line*
+After running `npm install`, if you need to edit google/protobug/\*.proto, run `./pbjs.sh` then *remove prototype.oneOfIndex line*
 (because pbjs doesn't respect optional int, there ie no way we can know if the field is in oneOf)
 
 After making changes to `ts-proto`, you can run `./sample/createSample.sh` to re-compile sample.proto.
+
+RELEASE
+=======
+
+use prepare-for-release.sh.
 
 Assumptions
 ===========
@@ -93,7 +98,7 @@ Todo
 Types
 ============
 
-Numbers are by default assumed to be plain JavaScript `numbers`. Since protobuf supports 64 bit numbers, but JavaScript doesn't, 
+Numbers are by default assumed to be plain JavaScript `numbers`. Since protobuf supports 64 bit numbers, but JavaScript doesn't,
 default behaviour is that program will misfunction when the number is larger than `Number.MAX_SAFE_INTEGER`.
 
 Each of the protobuf types maps as following.
@@ -116,7 +121,7 @@ Each of the protobuf types maps as following.
 |  sfixed64 | number* |
 |  Any | NOT SUPPORTED |
 |  Timestamp | NOT SUPPORTED |
-|  Duration | NOT SUPPORTED | 
+|  Duration | NOT SUPPORTED |
 |  message | interface &#124; undefined |
 |  enum | const string enum &#124; undefined |
 |  map<K,V> | { [key: K] : V } |

@@ -1,6 +1,6 @@
 import { promisify } from 'util';
 import { optionsFromParameter, readToBuffer } from './utils';
-import { google } from '../build/pbjs';
+import { google } from '../proto-plugin/pbjs';
 import { generateFile } from './main';
 import { createTypeMap } from './types';
 import CodeGeneratorRequest = google.protobuf.compiler.CodeGeneratorRequest;

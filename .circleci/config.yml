@@ -11,7 +11,7 @@ jobs:
             - v1-dependencies-{{ checksum "package.json" }}
             - v1-dependencies-
 
-      - run: yarn install || echo "ignore failure"
+      - run: npm install || echo "ignore failure"
       - run: ./pbjs.sh
       - run: ./integration/pbjs.sh
 
@@ -20,4 +20,4 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      - run: yarn test
+      - run: npm run test
