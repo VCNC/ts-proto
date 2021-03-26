@@ -65,7 +65,8 @@ function generateEnum(enumDesc, sourceInfo, options) {
     let index = 0;
     for (const valueDesc of enumDesc.value) {
         if (((_b = valueDesc.options) === null || _b === void 0 ? void 0 : _b.clientDeprecatedEnumValue) === true) {
-            return undefined;
+            index++;
+            continue;
         }
         const info = sourceInfo.lookup(sourceInfo_1.Fields.enum.value, index++);
         let javaDoc = undefined;
