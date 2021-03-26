@@ -103,7 +103,8 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
   let index = 0;
   for (const valueDesc of enumDesc.value) {
     if (valueDesc.options?.clientDeprecatedEnumValue === true) {
-      return undefined;
+      index++;
+      continue
     }
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     let javaDoc: string | undefined = undefined;
