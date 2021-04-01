@@ -1,15 +1,12 @@
 /* eslint-disable */
 
 
-export const enum SampleEnum {
-  LOREM = "LOREM",
-  IPSUM = "IPSUM",
-}
+type SampleEnum = LOREM | IPSUM;
 
 export function SampleEnum_fromString(str: string): SampleEnum | undefined {
   switch (str) {
-    case SampleEnum.LOREM:
-    case SampleEnum.IPSUM:
+    case "LOREM":
+    case "IPSUM":
     return str
     default: return undefined
   }
@@ -35,15 +32,19 @@ export namespace ParentMessage {
     }
   }
 
-  export const enum ChildEnum {
-    CHILD_LOREM = "CHILD_LOREM",
-    CHILD_IPSUM = "CHILD_IPSUM",
-  }
+  /**
+   * CHILD_LOREM : 
+     *  comment for lorem
+   * CHILD_IPSUM : 
+     *  comment for ipsum
+     *  comment2 for ipsum
+   */
+  type ChildEnum = CHILD_LOREM | CHILD_IPSUM;
 
   export function ChildEnum_fromString(str: string): ChildEnum | undefined {
     switch (str) {
-      case ChildEnum.CHILD_LOREM:
-      case ChildEnum.CHILD_IPSUM:
+      case "CHILD_LOREM":
+      case "CHILD_IPSUM":
       return str
       default: return undefined
     }

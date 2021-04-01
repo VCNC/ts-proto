@@ -30,7 +30,10 @@ message ParentMessage {
     }
 
     enum ChildEnum {
+        // comment for lorem
         CHILD_LOREM = 0;
+        // comment for ipsum
+        // comment2 for ipsum
         CHILD_IPSUM = 1;
         CHILD_DEPRECATED = 2 [(client_deprecated_enum_value) = true];
     }
