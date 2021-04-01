@@ -29,6 +29,7 @@ message ParentMessage {
         ChildMessage deprecated = 2 [(client_deprecated_field) = true];
     }
 
+    // comment for child enum
     enum ChildEnum {
         // comment for lorem
         CHILD_LOREM = 0;

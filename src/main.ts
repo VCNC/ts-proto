@@ -101,7 +101,7 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
     .returns(`${name} | undefined`)
     .addParameter('str', 'string')
     .beginControlFlow('switch (str)');
-  maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
+  maybeAddComment(sourceInfo, text => (javaDocs.push(CodeBlock.of(text + '\n'))));
 
   let index = 0;
   for (const valueDesc of enumDesc.value) {

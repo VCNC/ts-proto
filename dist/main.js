@@ -62,7 +62,7 @@ function generateEnum(enumDesc, sourceInfo, options) {
         .returns(`${name} | undefined`)
         .addParameter('str', 'string')
         .beginControlFlow('switch (str)');
-    utils_1.maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
+    utils_1.maybeAddComment(sourceInfo, text => (javaDocs.push(ts_poet_1.CodeBlock.of(text + '\n'))));
     let index = 0;
     for (const valueDesc of enumDesc.value) {
         if (((_b = valueDesc.options) === null || _b === void 0 ? void 0 : _b.clientDeprecatedEnumValue) === true) {

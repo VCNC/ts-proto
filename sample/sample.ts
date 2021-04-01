@@ -33,6 +33,8 @@ export namespace ParentMessage {
   }
 
   /**
+   *  comment for child enum
+   *
    * CHILD_LOREM : 
      *  comment for lorem
    * CHILD_IPSUM : 
