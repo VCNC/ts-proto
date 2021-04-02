@@ -7,6 +7,8 @@ import {
   InterfaceSpec,
   Modifier,
   PropertySpec,
+  TypeAliasSpec,
+  TypeNameOrString,
   TypeNames
 } from './ts-poet';
 import { google } from '../proto-plugin/pbjs';
@@ -67,7 +69,7 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
       continue;
     }
     const [enumSpec, enumToJson] = enumGenerated;
-    file = file.addEnum(enumSpec).addFunction(enumToJson)
+    file = file.addTypeAlias(enumSpec).addFunction(enumToJson)
   }
 
   index = 0;
@@ -87,18 +89,19 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   return file;
 }
 
-function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): [EnumSpec, FunctionSpec] | undefined {
+function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): [TypeAliasSpec, FunctionSpec] | undefined {
   if (enumDesc.options?.clientDeprecatedEnum === true) {
     return undefined;
   }
   let name = maybeSnakeToCamel(enumDesc.name, options)
-  let spec = EnumSpec.create(name).addModifiers(Modifier.CONST, Modifier.EXPORT);
+  let enumTypeNames: string[] = []
+  let javaDocs: CodeBlock[] = []
   let toJsonSpec = FunctionSpec.create(name+'_fromString')
     .addModifiers(Modifier.EXPORT)
     .returns(`${name} | undefined`)
     .addParameter('str', 'string')
     .beginControlFlow('switch (str)');
-  maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
+  maybeAddComment(sourceInfo, text => (javaDocs.push(CodeBlock.of(text + '\n'))));
 
   let index = 0;
   for (const valueDesc of enumDesc.value) {
@@ -109,13 +112,20 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     let javaDoc: string | undefined = undefined;
     maybeAddComment(info, text => (javaDoc = text));
-    spec = spec.addConstant(valueDesc.name, `"${valueDesc.name}"`, javaDoc != null ? CodeBlock.of(javaDoc) : javaDoc);
-    toJsonSpec = toJsonSpec.addCode('case %L:\n', name + '.' + valueDesc.name)
+    enumTypeNames.push(valueDesc.name)
+    if (javaDoc != null) {
+      javaDocs.push(CodeBlock.of(`${valueDesc.name} : \n%>` + javaDoc + '%<'))
+    }
+    toJsonSpec = toJsonSpec.addCode('case %S:\n', valueDesc.name)
   }
   toJsonSpec = toJsonSpec
     .addCode('return str\n')
     .addCode('default: return undefined\n')
     .endControlFlow();
+  let spec = TypeAliasSpec.create(name, TypeNames.unionType(...enumTypeNames))
+  for (const doc of javaDocs) {
+    spec = spec.addJavadocBlock(doc)
+  }
   return [spec, toJsonSpec];
 }
 
@@ -241,7 +251,7 @@ function generateInterfaceDeclaration(
       }
       const [enumSpec, enumToJson] = enumGenerated;
       namespaceSpec = namespaceSpec
-        .addEnum(enumSpec)
+        .addTypeAlias(enumSpec)
         .addFunction(enumToJson)
     }
   }

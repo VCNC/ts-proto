@@ -31,7 +31,7 @@ function generateFile(typeMap, fileDesc, parameter) {
             continue;
         }
         const [enumSpec, enumToJson] = enumGenerated;
-        file = file.addEnum(enumSpec).addFunction(enumToJson);
+        file = file.addTypeAlias(enumSpec).addFunction(enumToJson);
     }
     index = 0;
     for (const message of fileDesc.messageType) {
@@ -55,13 +55,14 @@ function generateEnum(enumDesc, sourceInfo, options) {
         return undefined;
     }
     let name = maybeSnakeToCamel(enumDesc.name, options);
-    let spec = ts_poet_1.EnumSpec.create(name).addModifiers(ts_poet_1.Modifier.CONST, ts_poet_1.Modifier.EXPORT);
+    let enumTypeNames = [];
+    let javaDocs = [];
     let toJsonSpec = ts_poet_1.FunctionSpec.create(name + '_fromString')
         .addModifiers(ts_poet_1.Modifier.EXPORT)
         .returns(`${name} | undefined`)
         .addParameter('str', 'string')
         .beginControlFlow('switch (str)');
-    utils_1.maybeAddComment(sourceInfo, text => (spec = spec.addJavadoc(text)));
+    utils_1.maybeAddComment(sourceInfo, text => (javaDocs.push(ts_poet_1.CodeBlock.of(text + '\n'))));
     let index = 0;
     for (const valueDesc of enumDesc.value) {
         if (((_b = valueDesc.options) === null || _b === void 0 ? void 0 : _b.clientDeprecatedEnumValue) === true) {
@@ -71,13 +72,20 @@ function generateEnum(enumDesc, sourceInfo, options) {
         const info = sourceInfo.lookup(sourceInfo_1.Fields.enum.value, index++);
         let javaDoc = undefined;
         utils_1.maybeAddComment(info, text => (javaDoc = text));
-        spec = spec.addConstant(valueDesc.name, `"${valueDesc.name}"`, javaDoc != null ? ts_poet_1.CodeBlock.of(javaDoc) : javaDoc);
-        toJsonSpec = toJsonSpec.addCode('case %L:\n', name + '.' + valueDesc.name);
+        enumTypeNames.push(valueDesc.name);
+        if (javaDoc != null) {
+            javaDocs.push(ts_poet_1.CodeBlock.of(`${valueDesc.name} : \n%>` + javaDoc + '%<'));
+        }
+        toJsonSpec = toJsonSpec.addCode('case %S:\n', valueDesc.name);
     }
     toJsonSpec = toJsonSpec
         .addCode('return str\n')
         .addCode('default: return undefined\n')
         .endControlFlow();
+    let spec = ts_poet_1.TypeAliasSpec.create(name, ts_poet_1.TypeNames.unionType(...enumTypeNames));
+    for (const doc of javaDocs) {
+        spec = spec.addJavadocBlock(doc);
+    }
     return [spec, toJsonSpec];
 }
 function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options) {
@@ -188,7 +196,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
             }
             const [enumSpec, enumToJson] = enumGenerated;
             namespaceSpec = namespaceSpec
-                .addEnum(enumSpec)
+                .addTypeAlias(enumSpec)
                 .addFunction(enumToJson);
         }
     }
