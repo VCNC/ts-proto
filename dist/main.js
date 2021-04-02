@@ -72,7 +72,7 @@ function generateEnum(enumDesc, sourceInfo, options) {
         const info = sourceInfo.lookup(sourceInfo_1.Fields.enum.value, index++);
         let javaDoc = undefined;
         utils_1.maybeAddComment(info, text => (javaDoc = text));
-        enumTypeNames.push(valueDesc.name);
+        enumTypeNames.push(ts_poet_1.TypeNames.typeLiteral(valueDesc.name));
         if (javaDoc != null) {
             javaDocs.push(ts_poet_1.CodeBlock.of(`${valueDesc.name} : \n%>` + javaDoc + '%<'));
         }
@@ -82,7 +82,7 @@ function generateEnum(enumDesc, sourceInfo, options) {
         .addCode('return str\n')
         .addCode('default: return undefined\n')
         .endControlFlow();
-    let spec = ts_poet_1.TypeAliasSpec.create(name, ts_poet_1.TypeNames.unionType(...enumTypeNames));
+    let spec = ts_poet_1.TypeAliasSpec.create(name, new ts_poet_1.Union(enumTypeNames)).addModifiers(ts_poet_1.Modifier.EXPORT);
     for (const doc of javaDocs) {
         spec = spec.addJavadocBlock(doc);
     }

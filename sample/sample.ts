@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 
-type SampleEnum = LOREM | IPSUM;
+export type SampleEnum = 'LOREM' | 'IPSUM';
 
 export function SampleEnum_fromString(str: string): SampleEnum | undefined {
   switch (str) {
@@ -41,7 +41,7 @@ export namespace ParentMessage {
      *  comment for ipsum
      *  comment2 for ipsum
    */
-  type ChildEnum = CHILD_LOREM | CHILD_IPSUM;
+  export type ChildEnum = 'CHILD_LOREM' | 'CHILD_IPSUM';
 
   export function ChildEnum_fromString(str: string): ChildEnum | undefined {
     switch (str) {

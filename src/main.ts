@@ -8,8 +8,10 @@ import {
   Modifier,
   PropertySpec,
   TypeAliasSpec,
+  TypeName,
   TypeNameOrString,
-  TypeNames
+  TypeNames,
+  Union
 } from './ts-poet';
 import { google } from '../proto-plugin/pbjs';
 import {
@@ -94,7 +96,7 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
     return undefined;
   }
   let name = maybeSnakeToCamel(enumDesc.name, options)
-  let enumTypeNames: string[] = []
+  let enumTypeNames: TypeName[] = []
   let javaDocs: CodeBlock[] = []
   let toJsonSpec = FunctionSpec.create(name+'_fromString')
     .addModifiers(Modifier.EXPORT)
@@ -112,7 +114,7 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     let javaDoc: string | undefined = undefined;
     maybeAddComment(info, text => (javaDoc = text));
-    enumTypeNames.push(valueDesc.name)
+    enumTypeNames.push(TypeNames.typeLiteral(valueDesc.name))
     if (javaDoc != null) {
       javaDocs.push(CodeBlock.of(`${valueDesc.name} : \n%>` + javaDoc + '%<'))
     }
@@ -122,7 +124,7 @@ function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, opt
     .addCode('return str\n')
     .addCode('default: return undefined\n')
     .endControlFlow();
-  let spec = TypeAliasSpec.create(name, TypeNames.unionType(...enumTypeNames))
+  let spec = TypeAliasSpec.create(name, new Union(enumTypeNames)).addModifiers(Modifier.EXPORT)
   for (const doc of javaDocs) {
     spec = spec.addJavadocBlock(doc)
   }
