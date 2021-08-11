@@ -148,6 +148,9 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                     else if (types_1.isMessage(valueFieldDesc)) {
                         messageFromObject = messageFromObject.addCode(`%T.fromObject(v)\n`, valueType);
                     }
+                    else if (types_1.isLong(valueFieldDesc) && options.forceLong === LongOption.STRING) {
+                        messageFromObject = messageFromObject.addCode(`v.toString()\n`);
+                    }
                     else if (types_1.is64BitInteger(valueFieldDesc)) {
                         messageFromObject = messageFromObject.addCode(`parseInt(v as string)\n`);
                     }
@@ -170,6 +173,9 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                 else if (types_1.isMessage(fieldDesc)) {
                     messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`, basicType);
                 }
+                else if (types_1.isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
+                    messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => v.toString()),\n`, basicType);
+                }
                 else if (types_1.is64BitInteger(fieldDesc)) {
                     messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`, basicType);
                 }
@@ -185,6 +191,9 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
             }
             else if (types_1.isMessage(fieldDesc)) {
                 messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName} != null ? %T.fromObject(obj.${fieldName}) : undefined,\n`, basicType);
+            }
+            else if (types_1.isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
+                messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.toString(),\n`);
             }
             else if (types_1.is64BitInteger(fieldDesc)) {
                 messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`);

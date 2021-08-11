@@ -20,6 +20,7 @@ import {
   getMapValueFieldDesc,
   is64BitInteger,
   isEnum,
+  isLong,
   isMessage,
   isRepeated,
   toTypeName,
@@ -207,6 +208,8 @@ function generateInterfaceDeclaration(
             messageFromObject = messageFromObject.addCode(`%T(v as string)\n`, functionType);
           } else if (isMessage(valueFieldDesc)) {
             messageFromObject = messageFromObject.addCode(`%T.fromObject(v)\n`, valueType);
+          } else if (isLong(valueFieldDesc) && options.forceLong === LongOption.STRING) {
+            messageFromObject = messageFromObject.addCode(`v.toString()\n`);
           } else if (is64BitInteger(valueFieldDesc)) {
             messageFromObject = messageFromObject.addCode(`parseInt(v as string)\n`);
           }
@@ -235,6 +238,11 @@ function generateInterfaceDeclaration(
             `${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`,
             basicType
           );
+        } else if (isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
+          messageFromObject = messageFromObject.addCode(
+            `${fieldName}: obj.${fieldName}.map((v: any) => v.toString()),\n`,
+            basicType
+          );
         } else if (is64BitInteger(fieldDesc)) {
           messageFromObject = messageFromObject.addCode(
             `${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`,
@@ -255,6 +263,8 @@ function generateInterfaceDeclaration(
           `${fieldName}: obj.${fieldName} != null ? %T.fromObject(obj.${fieldName}) : undefined,\n`,
           basicType
         );
+      } else if (isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
+        messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.toString(),\n`);
       } else if (is64BitInteger(fieldDesc)) {
         messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`);
       }
