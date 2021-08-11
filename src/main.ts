@@ -34,10 +34,16 @@ import FieldDescriptorProto = google.protobuf.FieldDescriptorProto;
 import FileDescriptorProto = google.protobuf.FileDescriptorProto;
 import EnumDescriptorProto = google.protobuf.EnumDescriptorProto;
 
+export enum LongOption {
+  NUMBER = 'number',
+  LONG = 'long',
+  STRING = 'string'
+}
+
 export type Options = {
   useContext: boolean;
   snakeToCamel: boolean;
-  forceLong: boolean;
+  forceLong: LongOption;
 };
 
 export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, parameter: string): FileSpec {
@@ -71,7 +77,7 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
       continue;
     }
     const [enumSpec, enumToJson] = enumGenerated;
-    file = file.addTypeAlias(enumSpec).addFunction(enumToJson)
+    file = file.addTypeAlias(enumSpec).addFunction(enumToJson);
   }
 
   index = 0;
@@ -91,42 +97,46 @@ export function generateFile(typeMap: TypeMap, fileDesc: FileDescriptorProto, pa
   return file;
 }
 
-function generateEnum(enumDesc: EnumDescriptorProto, sourceInfo: SourceInfo, options: Options): [TypeAliasSpec, FunctionSpec] | undefined {
+function generateEnum(
+  enumDesc: EnumDescriptorProto,
+  sourceInfo: SourceInfo,
+  options: Options
+): [TypeAliasSpec, FunctionSpec] | undefined {
   if (enumDesc.options?.clientDeprecatedEnum === true) {
     return undefined;
   }
-  let name = maybeSnakeToCamel(enumDesc.name, options)
-  let enumTypeNames: TypeName[] = []
-  let javaDocs: CodeBlock[] = []
-  let toJsonSpec = FunctionSpec.create(name+'_fromString')
+  let name = maybeSnakeToCamel(enumDesc.name, options);
+  let enumTypeNames: TypeName[] = [];
+  let javaDocs: CodeBlock[] = [];
+  let toJsonSpec = FunctionSpec.create(name + '_fromString')
     .addModifiers(Modifier.EXPORT)
     .returns(`${name} | undefined`)
     .addParameter('str', 'string')
     .beginControlFlow('switch (str)');
-  maybeAddComment(sourceInfo, text => (javaDocs.push(CodeBlock.of(text + '\n'))));
+  maybeAddComment(sourceInfo, text => javaDocs.push(CodeBlock.of(text + '\n')));
 
   let index = 0;
   for (const valueDesc of enumDesc.value) {
     if (valueDesc.options?.clientDeprecatedEnumValue === true) {
       index++;
-      continue
+      continue;
     }
     const info = sourceInfo.lookup(Fields.enum.value, index++);
     let javaDoc: string | undefined = undefined;
     maybeAddComment(info, text => (javaDoc = text));
-    enumTypeNames.push(TypeNames.typeLiteral(valueDesc.name))
+    enumTypeNames.push(TypeNames.typeLiteral(valueDesc.name));
     if (javaDoc != null) {
-      javaDocs.push(CodeBlock.of(`${valueDesc.name} : \n%>` + javaDoc + '%<'))
+      javaDocs.push(CodeBlock.of(`${valueDesc.name} : \n%>` + javaDoc + '%<'));
     }
-    toJsonSpec = toJsonSpec.addCode('case %S:\n', valueDesc.name)
+    toJsonSpec = toJsonSpec.addCode('case %S:\n', valueDesc.name);
   }
   toJsonSpec = toJsonSpec
     .addCode('return str\n')
     .addCode('default: return undefined\n')
     .endControlFlow();
-  let spec = TypeAliasSpec.create(name, new Union(enumTypeNames)).addModifiers(Modifier.EXPORT)
+  let spec = TypeAliasSpec.create(name, new Union(enumTypeNames)).addModifiers(Modifier.EXPORT);
   for (const doc of javaDocs) {
-    spec = spec.addJavadocBlock(doc)
+    spec = spec.addJavadocBlock(doc);
   }
   return [spec, toJsonSpec];
 }
@@ -139,7 +149,7 @@ function generateInterfaceDeclaration(
   options: Options
 ): [InterfaceSpec, NamespaceSpec | undefined] | undefined {
   if (messageDesc?.options?.clientDeprecatedMessage === true) {
-    return undefined
+    return undefined;
   }
   let messageName = maybeSnakeToCamel(messageDesc.name, options);
   let message = InterfaceSpec.create(messageName).addModifiers(Modifier.EXPORT);
@@ -159,14 +169,10 @@ function generateInterfaceDeclaration(
     let type = toTypeName(typeMap, messageDesc, fieldDesc, options);
     let basicType = basicTypeName(typeMap, fieldDesc, options);
     let fieldName = maybeSnakeToCamel(fieldDesc.name, options);
-    let prop = PropertySpec.create(
-      fieldName,
-      type.type,
-      type.isOptional
-    );
+    let prop = PropertySpec.create(fieldName, type.type, type.isOptional);
     if (fieldDesc.oneofIndex != null) {
       let oneOfName = messageDesc.oneofDecl[fieldDesc.oneofIndex].name;
-      prop = prop.addJavadoc(`OneOf-${oneOfName}\n`)
+      prop = prop.addJavadoc(`OneOf-${oneOfName}\n`);
     }
     const info = sourceInfo.lookup(Fields.message.field, index++);
     maybeAddComment(info, text => (prop = prop.addJavadoc(text)));
@@ -179,9 +185,13 @@ function generateInterfaceDeclaration(
       if (mapType) {
         // if it is a map,
         const valueFieldDesc = getMapValueFieldDesc(typeMap, messageDesc, fieldDesc, options);
-        if (valueFieldDesc != null && (isEnum(valueFieldDesc) || isMessage(valueFieldDesc) || is64BitInteger(valueFieldDesc))) {
+        if (
+          valueFieldDesc != null &&
+          (isEnum(valueFieldDesc) || isMessage(valueFieldDesc) || is64BitInteger(valueFieldDesc))
+        ) {
           const { keyType, valueType } = mapType;
-          messageFromObject = messageFromObject.addCode(`${fieldName}: (() => {\n`)
+          messageFromObject = messageFromObject
+            .addCode(`${fieldName}: (() => {\n`)
             .indent()
             .addCode('const ret: any = {}\n')
             .addCode('Object.entries(obj).forEach(([k,v]) => {\n')
@@ -193,19 +203,20 @@ function generateInterfaceDeclaration(
             const importedSymbol = valueAnyType.imported as Imported;
             // symbol and functionType is needed for import.
             const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
-            const functionType = TypeNames.anyType(valueAnyType.usage + "_fromString", functionSymbol);
-            messageFromObject = messageFromObject.addCode(`%T(v as string)\n`, functionType)
+            const functionType = TypeNames.anyType(valueAnyType.usage + '_fromString', functionSymbol);
+            messageFromObject = messageFromObject.addCode(`%T(v as string)\n`, functionType);
           } else if (isMessage(valueFieldDesc)) {
-            messageFromObject = messageFromObject.addCode(`%T.fromObject(v)\n`, valueType)
+            messageFromObject = messageFromObject.addCode(`%T.fromObject(v)\n`, valueType);
           } else if (is64BitInteger(valueFieldDesc)) {
-            messageFromObject = messageFromObject.addCode(`parseInt(v as string)\n`)
+            messageFromObject = messageFromObject.addCode(`parseInt(v as string)\n`);
           }
 
-          messageFromObject = messageFromObject.unindent()
+          messageFromObject = messageFromObject
+            .unindent()
             .addCode('})\n')
             .addCode('return ret\n')
             .unindent()
-            .addCode('})(),\n')
+            .addCode('})(),\n');
         }
       } else {
         // if it is a list
@@ -214,12 +225,21 @@ function generateInterfaceDeclaration(
           const importedSymbol = basicAnyType.imported as Imported;
           // symbol and functionType is needed for import.
           const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
-          const functionType = TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
-          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType)
+          const functionType = TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
+          messageFromObject = messageFromObject.addCode(
+            `${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`,
+            functionType
+          );
         } else if (isMessage(fieldDesc)) {
-          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`, basicType)
+          messageFromObject = messageFromObject.addCode(
+            `${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`,
+            basicType
+          );
         } else if (is64BitInteger(fieldDesc)) {
-          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`, basicType)
+          messageFromObject = messageFromObject.addCode(
+            `${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`,
+            basicType
+          );
         }
       }
     } else if (isEnum(fieldDesc) || isMessage(fieldDesc) || is64BitInteger(fieldDesc)) {
@@ -228,18 +248,20 @@ function generateInterfaceDeclaration(
         const importedSymbol = basicAnyType.imported as Imported;
         // symbol and functionType is needed for import.
         const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
-        const functionType = TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
+        const functionType = TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
         messageFromObject = messageFromObject.addCode(`${fieldName}: %T(obj.${fieldName}),\n`, functionType);
       } else if (isMessage(fieldDesc)) {
-        messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName} != null ? %T.fromObject(obj.${fieldName}) : undefined,\n`, basicType)
+        messageFromObject = messageFromObject.addCode(
+          `${fieldName}: obj.${fieldName} != null ? %T.fromObject(obj.${fieldName}) : undefined,\n`,
+          basicType
+        );
       } else if (is64BitInteger(fieldDesc)) {
-        messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`)
+        messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`);
       }
     }
   }
   messageFromObject = messageFromObject.endControlFlow();
-  let namespaceSpec = NamespaceSpec.create(messageName)
-    .addModifiers(Modifier.EXPORT);
+  let namespaceSpec = NamespaceSpec.create(messageName).addModifiers(Modifier.EXPORT);
 
   namespaceSpec = namespaceSpec.addFunction(messageFromObject);
 
@@ -248,13 +270,11 @@ function generateInterfaceDeclaration(
     for (const enumDesc of messageDesc.enumType) {
       const nestedSourceInfo = sourceInfo.open(Fields.message.enum_type, index++);
       const enumGenerated = generateEnum(enumDesc, nestedSourceInfo, options);
-      if( enumGenerated == null) {
+      if (enumGenerated == null) {
         continue;
       }
       const [enumSpec, enumToJson] = enumGenerated;
-      namespaceSpec = namespaceSpec
-        .addTypeAlias(enumSpec)
-        .addFunction(enumToJson)
+      namespaceSpec = namespaceSpec.addTypeAlias(enumSpec).addFunction(enumToJson);
     }
   }
 
@@ -265,14 +285,19 @@ function generateInterfaceDeclaration(
         continue;
       }
       const nestedSourceInfo = sourceInfo.open(Fields.message.nested_type, index++);
-      const nestedInterfaceGenerated = generateInterfaceDeclaration(typeMap, nestedMessageDesc, nestedSourceInfo, options);
+      const nestedInterfaceGenerated = generateInterfaceDeclaration(
+        typeMap,
+        nestedMessageDesc,
+        nestedSourceInfo,
+        options
+      );
       if (nestedInterfaceGenerated == null) {
         continue;
       }
       const [nestedInterfaceSpec, nestedNamespaceSpec] = nestedInterfaceGenerated;
-      namespaceSpec = namespaceSpec.addInterface(nestedInterfaceSpec)
+      namespaceSpec = namespaceSpec.addInterface(nestedInterfaceSpec);
       if (nestedNamespaceSpec != null) {
-        namespaceSpec = namespaceSpec.addNamespace(nestedNamespaceSpec)
+        namespaceSpec = namespaceSpec.addNamespace(nestedNamespaceSpec);
       }
     }
   }

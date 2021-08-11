@@ -1,5 +1,5 @@
 import ReadStream = NodeJS.ReadStream;
-import { Options } from './main';
+import { LongOption, Options } from './main';
 import { SourceDescription } from './sourceInfo';
 
 export function readToBuffer(stream: ReadStream): Promise<Buffer> {
@@ -39,7 +39,7 @@ export function optionsFromParameter(parameter: string): Options {
   const options: Options = {
     useContext: false,
     snakeToCamel: true,
-    forceLong: false,
+    forceLong: LongOption.NUMBER
   };
 
   if (parameter) {
@@ -49,8 +49,11 @@ export function optionsFromParameter(parameter: string): Options {
     if (parameter.includes('snakeToCamel=false')) {
       options.snakeToCamel = false;
     }
-    if (parameter.includes('forceLong=true')) {
-      options.forceLong = true;
+    if (parameter.includes('forceLong=string')) {
+      options.forceLong = LongOption.STRING;
+    }
+    if (parameter.includes('forceLong=long')) {
+      options.forceLong = LongOption.LONG;
     }
   }
   return options;

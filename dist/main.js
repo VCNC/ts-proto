@@ -16,6 +16,12 @@ const NamespaceSpec_1 = require("./ts-poet/NamespaceSpec");
 const SymbolSpecs_1 = require("./ts-poet/SymbolSpecs");
 var FieldDescriptorProto = pbjs_1.google.protobuf.FieldDescriptorProto;
 var FileDescriptorProto = pbjs_1.google.protobuf.FileDescriptorProto;
+var LongOption;
+(function (LongOption) {
+    LongOption["NUMBER"] = "number";
+    LongOption["LONG"] = "long";
+    LongOption["STRING"] = "string";
+})(LongOption = exports.LongOption || (exports.LongOption = {}));
 function generateFile(typeMap, fileDesc, parameter) {
     const options = utils_1.optionsFromParameter(parameter);
     const moduleName = fileDesc.name.replace('.proto', '.ts');
@@ -62,7 +68,7 @@ function generateEnum(enumDesc, sourceInfo, options) {
         .returns(`${name} | undefined`)
         .addParameter('str', 'string')
         .beginControlFlow('switch (str)');
-    utils_1.maybeAddComment(sourceInfo, text => (javaDocs.push(ts_poet_1.CodeBlock.of(text + '\n'))));
+    utils_1.maybeAddComment(sourceInfo, text => javaDocs.push(ts_poet_1.CodeBlock.of(text + '\n')));
     let index = 0;
     for (const valueDesc of enumDesc.value) {
         if (((_b = valueDesc.options) === null || _b === void 0 ? void 0 : _b.clientDeprecatedEnumValue) === true) {
@@ -122,9 +128,11 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
             const mapType = types_1.detectMapType(typeMap, messageDesc, fieldDesc, options);
             if (mapType) {
                 const valueFieldDesc = types_1.getMapValueFieldDesc(typeMap, messageDesc, fieldDesc, options);
-                if (valueFieldDesc != null && (types_1.isEnum(valueFieldDesc) || types_1.isMessage(valueFieldDesc) || types_1.is64BitInteger(valueFieldDesc))) {
+                if (valueFieldDesc != null &&
+                    (types_1.isEnum(valueFieldDesc) || types_1.isMessage(valueFieldDesc) || types_1.is64BitInteger(valueFieldDesc))) {
                     const { keyType, valueType } = mapType;
-                    messageFromObject = messageFromObject.addCode(`${fieldName}: (() => {\n`)
+                    messageFromObject = messageFromObject
+                        .addCode(`${fieldName}: (() => {\n`)
                         .indent()
                         .addCode('const ret: any = {}\n')
                         .addCode('Object.entries(obj).forEach(([k,v]) => {\n')
@@ -134,7 +142,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                         const valueAnyType = valueType;
                         const importedSymbol = valueAnyType.imported;
                         const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
-                        const functionType = ts_poet_1.TypeNames.anyType(valueAnyType.usage + "_fromString", functionSymbol);
+                        const functionType = ts_poet_1.TypeNames.anyType(valueAnyType.usage + '_fromString', functionSymbol);
                         messageFromObject = messageFromObject.addCode(`%T(v as string)\n`, functionType);
                     }
                     else if (types_1.isMessage(valueFieldDesc)) {
@@ -143,7 +151,8 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                     else if (types_1.is64BitInteger(valueFieldDesc)) {
                         messageFromObject = messageFromObject.addCode(`parseInt(v as string)\n`);
                     }
-                    messageFromObject = messageFromObject.unindent()
+                    messageFromObject = messageFromObject
+                        .unindent()
                         .addCode('})\n')
                         .addCode('return ret\n')
                         .unindent()
@@ -155,7 +164,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                     const basicAnyType = basicType;
                     const importedSymbol = basicAnyType.imported;
                     const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
-                    const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
+                    const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
                     messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType);
                 }
                 else if (types_1.isMessage(fieldDesc)) {
@@ -171,7 +180,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                 const basicAnyType = basicType;
                 const importedSymbol = basicAnyType.imported;
                 const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
-                const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + "_fromString", functionSymbol);
+                const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
                 messageFromObject = messageFromObject.addCode(`${fieldName}: %T(obj.${fieldName}),\n`, functionType);
             }
             else if (types_1.isMessage(fieldDesc)) {
@@ -183,8 +192,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
         }
     }
     messageFromObject = messageFromObject.endControlFlow();
-    let namespaceSpec = NamespaceSpec_1.NamespaceSpec.create(messageName)
-        .addModifiers(ts_poet_1.Modifier.EXPORT);
+    let namespaceSpec = NamespaceSpec_1.NamespaceSpec.create(messageName).addModifiers(ts_poet_1.Modifier.EXPORT);
     namespaceSpec = namespaceSpec.addFunction(messageFromObject);
     if (messageDesc.enumType.length !== 0) {
         let index = 0;
@@ -195,9 +203,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                 continue;
             }
             const [enumSpec, enumToJson] = enumGenerated;
-            namespaceSpec = namespaceSpec
-                .addTypeAlias(enumSpec)
-                .addFunction(enumToJson);
+            namespaceSpec = namespaceSpec.addTypeAlias(enumSpec).addFunction(enumToJson);
         }
     }
     if (messageDesc.nestedType.length !== 0) {

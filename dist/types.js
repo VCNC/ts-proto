@@ -70,7 +70,15 @@ function basicTypeName(typeMap, field, options, keepValueType = false) {
         case FieldDescriptorProto.Type.TYPE_SINT64:
         case FieldDescriptorProto.Type.TYPE_FIXED64:
         case FieldDescriptorProto.Type.TYPE_SFIXED64:
-            return options.forceLong ? ts_poet_1.TypeNames.anyType('Long*long') : ts_poet_1.TypeNames.NUMBER;
+            switch (options.forceLong) {
+                case main_1.LongOption.LONG:
+                    return ts_poet_1.TypeNames.anyType('Long*long');
+                case main_1.LongOption.STRING:
+                    return ts_poet_1.TypeNames.STRING;
+                case main_1.LongOption.NUMBER:
+                default:
+                    return ts_poet_1.TypeNames.NUMBER;
+            }
         case FieldDescriptorProto.Type.TYPE_BOOL:
             return ts_poet_1.TypeNames.BOOLEAN;
         case FieldDescriptorProto.Type.TYPE_STRING:
@@ -164,11 +172,27 @@ function defaultValue(type, options) {
             return 0;
         case FieldDescriptorProto.Type.TYPE_UINT64:
         case FieldDescriptorProto.Type.TYPE_FIXED64:
-            return options.forceLong ? ts_poet_1.CodeBlock.of('%T.UZERO', 'Long*long') : 0;
+            switch (options.forceLong) {
+                case main_1.LongOption.STRING:
+                    return '0';
+                case main_1.LongOption.LONG:
+                    return ts_poet_1.CodeBlock.of('%T.UZERO', 'Long*long');
+                case main_1.LongOption.NUMBER:
+                default:
+                    return 0;
+            }
         case FieldDescriptorProto.Type.TYPE_INT64:
         case FieldDescriptorProto.Type.TYPE_SINT64:
         case FieldDescriptorProto.Type.TYPE_SFIXED64:
-            return options.forceLong ? ts_poet_1.CodeBlock.of('%T.ZERO', 'Long*long') : 0;
+            switch (options.forceLong) {
+                case main_1.LongOption.STRING:
+                    return '0';
+                case main_1.LongOption.LONG:
+                    return ts_poet_1.CodeBlock.of('%T.UZERO', 'Long*long');
+                case main_1.LongOption.NUMBER:
+                default:
+                    return 0;
+            }
         case FieldDescriptorProto.Type.TYPE_BOOL:
             return false;
         case FieldDescriptorProto.Type.TYPE_STRING:
@@ -210,9 +234,9 @@ function isEnum(field) {
 }
 exports.isEnum = isEnum;
 function is64BitInteger(field) {
-    return field.type === FieldDescriptorProto.Type.TYPE_FIXED64 ||
+    return (field.type === FieldDescriptorProto.Type.TYPE_FIXED64 ||
         field.type === FieldDescriptorProto.Type.TYPE_UINT64 ||
-        field.type === FieldDescriptorProto.Type.TYPE_INT64;
+        field.type === FieldDescriptorProto.Type.TYPE_INT64);
 }
 exports.is64BitInteger = is64BitInteger;
 function isWithinOneOf(field) {
