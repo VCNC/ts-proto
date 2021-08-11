@@ -86,7 +86,6 @@ export function basicTypeName(
         default:
           return TypeNames.NUMBER;
       }
-    // return options.forceLong ? TypeNames.anyType('Long*long') : options. TypeNames.NUMBER;
     case FieldDescriptorProto.Type.TYPE_BOOL:
       return TypeNames.BOOLEAN;
     case FieldDescriptorProto.Type.TYPE_STRING:
@@ -190,7 +189,6 @@ export function defaultValue(type: FieldDescriptorProto.Type, options: Options):
         default:
           return 0;
       }
-    // return options.forceLong ? CodeBlock.of('%T.UZERO', 'Long*long') : 0;
     case FieldDescriptorProto.Type.TYPE_INT64:
     case FieldDescriptorProto.Type.TYPE_SINT64:
     case FieldDescriptorProto.Type.TYPE_SFIXED64:
