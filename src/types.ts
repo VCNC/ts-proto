@@ -1,6 +1,6 @@
 import { google } from '../proto-plugin/pbjs';
 import { CodeBlock, Member, TypeName, TypeNames } from './ts-poet';
-import { Options, visit } from './main';
+import { LongOption, Options, visit } from './main';
 import { fail } from './utils';
 import { asSequence } from 'sequency';
 import SourceInfo from './sourceInfo';
@@ -56,7 +56,12 @@ export function basicLongWireType(type: FieldDescriptorProto.Type): number | und
 }
 
 /** Returns the type name without any repeated/required/etc. labels. */
-export function basicTypeName(typeMap: TypeMap, field: FieldDescriptorProto, options: Options, keepValueType: boolean = false): TypeName {
+export function basicTypeName(
+  typeMap: TypeMap,
+  field: FieldDescriptorProto,
+  options: Options,
+  keepValueType: boolean = false
+): TypeName {
   switch (field.type) {
     case FieldDescriptorProto.Type.TYPE_DOUBLE:
     case FieldDescriptorProto.Type.TYPE_FLOAT:
@@ -72,7 +77,16 @@ export function basicTypeName(typeMap: TypeMap, field: FieldDescriptorProto, opt
     case FieldDescriptorProto.Type.TYPE_FIXED64:
     case FieldDescriptorProto.Type.TYPE_SFIXED64:
       // this handles 2^53, Long is only needed for 2^64; this is effectively pbjs's forceNumber
-      return options.forceLong ? TypeNames.anyType('Long*long') : TypeNames.NUMBER;
+      switch (options.forceLong) {
+        case LongOption.LONG:
+          return TypeNames.anyType('Long*long');
+        case LongOption.STRING:
+          return TypeNames.STRING;
+        case LongOption.NUMBER:
+        default:
+          return TypeNames.NUMBER;
+      }
+    // return options.forceLong ? TypeNames.anyType('Long*long') : options. TypeNames.NUMBER;
     case FieldDescriptorProto.Type.TYPE_BOOL:
       return TypeNames.BOOLEAN;
     case FieldDescriptorProto.Type.TYPE_STRING:
@@ -167,11 +181,28 @@ export function defaultValue(type: FieldDescriptorProto.Type, options: Options):
       return 0;
     case FieldDescriptorProto.Type.TYPE_UINT64:
     case FieldDescriptorProto.Type.TYPE_FIXED64:
-      return options.forceLong ? CodeBlock.of('%T.UZERO', 'Long*long') : 0;
+      switch (options.forceLong) {
+        case LongOption.STRING:
+          return '0';
+        case LongOption.LONG:
+          return CodeBlock.of('%T.UZERO', 'Long*long');
+        case LongOption.NUMBER:
+        default:
+          return 0;
+      }
+    // return options.forceLong ? CodeBlock.of('%T.UZERO', 'Long*long') : 0;
     case FieldDescriptorProto.Type.TYPE_INT64:
     case FieldDescriptorProto.Type.TYPE_SINT64:
     case FieldDescriptorProto.Type.TYPE_SFIXED64:
-      return options.forceLong ? CodeBlock.of('%T.ZERO', 'Long*long') : 0;
+      switch (options.forceLong) {
+        case LongOption.STRING:
+          return '0';
+        case LongOption.LONG:
+          return CodeBlock.of('%T.UZERO', 'Long*long');
+        case LongOption.NUMBER:
+        default:
+          return 0;
+      }
     case FieldDescriptorProto.Type.TYPE_BOOL:
       return false;
     case FieldDescriptorProto.Type.TYPE_STRING:
@@ -193,7 +224,12 @@ export function createTypeMap(request: CodeGeneratorRequest, options: Options): 
     // We assume a file.name of google/protobuf/wrappers.proto --> a module path of google/protobuf/wrapper.ts
     const moduleName = file.name.replace('.proto', '');
     // So given a fullName like FooMessage_InnerMessage, proto will see that as package.name.FooMessage.InnerMessage
-    function saveMapping(tsFullName: string, desc: DescriptorProto | EnumDescriptorProto, s: SourceInfo, protoFullName: string): void {
+    function saveMapping(
+      tsFullName: string,
+      desc: DescriptorProto | EnumDescriptorProto,
+      s: SourceInfo,
+      protoFullName: string
+    ): void {
       // package is optional, but make sure we have a dot-prefixed type name either way
       const prefix = file.package.length === 0 ? '' : `.${file.package}`;
       typeMap.set(`${prefix}.${protoFullName}`, [moduleName, tsFullName, desc]);
@@ -220,9 +256,11 @@ export function isEnum(field: FieldDescriptorProto): boolean {
 }
 
 export function is64BitInteger(field: FieldDescriptorProto): boolean {
-  return field.type === FieldDescriptorProto.Type.TYPE_FIXED64 ||
+  return (
+    field.type === FieldDescriptorProto.Type.TYPE_FIXED64 ||
     field.type === FieldDescriptorProto.Type.TYPE_UINT64 ||
-    field.type === FieldDescriptorProto.Type.TYPE_INT64;
+    field.type === FieldDescriptorProto.Type.TYPE_INT64
+  );
 }
 
 export function isWithinOneOf(field: FieldDescriptorProto): boolean {
@@ -237,7 +275,12 @@ export function isLong(field: FieldDescriptorProto): boolean {
   return basicLongWireType(field.type) !== undefined;
 }
 
-export function isMapType(typeMap: TypeMap, messageDesc: DescriptorProto, field: FieldDescriptorProto, options: Options): boolean {
+export function isMapType(
+  typeMap: TypeMap,
+  messageDesc: DescriptorProto,
+  field: FieldDescriptorProto,
+  options: Options
+): boolean {
   return detectMapType(typeMap, messageDesc, field, options) !== undefined;
 }
 
@@ -275,9 +318,14 @@ function toModuleAndType(typeMap: TypeMap, protoType: string): [string, string, 
 }
 
 /** Return the TypeName for any field (primitive/message/etc.) as exposed in the interface. */
-export function toTypeName(typeMap: TypeMap, messageDesc: DescriptorProto, field: FieldDescriptorProto, options: Options): {type: TypeName, isOptional: boolean} {
+export function toTypeName(
+  typeMap: TypeMap,
+  messageDesc: DescriptorProto,
+  field: FieldDescriptorProto,
+  options: Options
+): { type: TypeName; isOptional: boolean } {
   let type = basicTypeName(typeMap, field, options, false);
-  let isOptional = false
+  let isOptional = false;
   if (isRepeated(field)) {
     const mapType = detectMapType(typeMap, messageDesc, field, options);
     if (mapType) {
@@ -287,11 +335,11 @@ export function toTypeName(typeMap: TypeMap, messageDesc: DescriptorProto, field
       type = TypeNames.arrayType(type);
     }
   } else if ((isWithinOneOf(field) || isMessage(field)) && !isValueType(field)) {
-    isOptional = true
+    isOptional = true;
   } else if (isEnum(field)) {
-    isOptional = true
+    isOptional = true;
   }
-  return {type, isOptional};
+  return { type, isOptional };
 }
 
 export function detectMapType(

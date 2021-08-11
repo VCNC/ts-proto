@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const main_1 = require("./main");
 function readToBuffer(stream) {
     return new Promise(resolve => {
         const ret = [];
@@ -37,7 +38,7 @@ function optionsFromParameter(parameter) {
     const options = {
         useContext: false,
         snakeToCamel: true,
-        forceLong: false,
+        forceLong: main_1.LongOption.NUMBER
     };
     if (parameter) {
         if (parameter.includes('context=true')) {
@@ -46,8 +47,11 @@ function optionsFromParameter(parameter) {
         if (parameter.includes('snakeToCamel=false')) {
             options.snakeToCamel = false;
         }
-        if (parameter.includes('forceLong=true')) {
-            options.forceLong = true;
+        if (parameter.includes('forceLong=string')) {
+            options.forceLong = main_1.LongOption.STRING;
+        }
+        if (parameter.includes('forceLong=long')) {
+            options.forceLong = main_1.LongOption.LONG;
         }
     }
     return options;
