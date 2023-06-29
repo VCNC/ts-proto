@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const SymbolSpecs_1 = require("./SymbolSpecs");
+/**
+ * Name of any possible type that can be referenced.
+ */
 class TypeName {
     toString() {
         return this.reference(undefined);
@@ -168,11 +171,22 @@ class Lambda extends TypeName {
     }
 }
 exports.Lambda = Lambda;
+/** Provides public factory methods for all of the type name variants. */
 class TypeNames {
+    /**
+     * An imported type name
+     *
+     * @param spec Import spec for type name
+     */
     static importedType(spec) {
         const symbolSpec = SymbolSpecs_1.SymbolSpec.from(spec);
         return TypeNames.anyType(symbolSpec.value, symbolSpec);
     }
+    /**
+     * Any class/enum/primitive/etc type name
+     *
+     * @param name Name for the type, will be symbolized
+     */
     static anyType(name, imported) {
         if (imported === undefined) {
             const match = name.match(SymbolSpecs_1.moduleSeparator);
@@ -185,6 +199,9 @@ class TypeNames {
         }
         return new Any(name, imported);
     }
+    /**
+     * A literal type value, e.g. 'one' or 1.
+     */
     static typeLiteral(value) {
         if (typeof value === 'string') {
             return TypeNames.anyType(`'${value}'`);
@@ -199,47 +216,117 @@ class TypeNames {
     static typesOrStrings(types) {
         return types.map(t => this.anyTypeMaybeString(t));
     }
+    /**
+     * Type name for the generic Array type
+     *
+     * @param elementType Element type of the array
+     * @return Type name of the new array type
+     */
     static arrayType(elementType) {
         return TypeNames.parameterizedType(TypeNames.ARRAY, elementType);
     }
+    /**
+     * Type name for the generic Set type
+     *
+     * @param elementType Element type of the set
+     * @return Type name of the new set type
+     */
     static setType(elementType) {
         return TypeNames.parameterizedType(TypeNames.SET, elementType);
     }
+    /**
+     * Type name for the generic Map type
+     *
+     * @param keyType Key type of the map
+     * @param valueType Value type of the map
+     * @return Type name of the new map type
+     */
     static mapType(keyType, valueType) {
         return TypeNames.parameterizedType(TypeNames.MAP, keyType, valueType);
     }
+    /**
+     * Parameterized type that represents a concrete
+     * usage of a generic type
+     *
+     * @param rawType Generic type to invoke with arguments
+     * @param typeArgs Names of the provided type arguments
+     * @return Type name of the new parameterized type
+     */
     static parameterizedType(rawType, ...typeArgs) {
         return new Parameterized(rawType, this.typesOrStrings(typeArgs));
     }
+    /**
+     * Type variable represents a single variable type in a
+     * generic type or function.
+     *
+     * @param name The name of the variable as it will be used in the definition
+     * @param bounds Bound constraints that will be required during instantiation
+     * @return Type name of the new type variable
+     */
     static typeVariable(name, ...bounds) {
         return new TypeVariable(name, bounds);
     }
+    /**
+     * Factory for type variable bounds
+     */
     static bound(type, combiner = Combiner.UNION, modifier) {
         return new Bound(TypeNames.anyTypeMaybeString(type), combiner, modifier);
     }
+    /**
+     * Factory for type variable bounds
+     */
     static unionBound(type, keyOf = false) {
         return TypeNames.bound(type, Combiner.UNION, keyOf ? BoundModifier.KEY_OF : undefined);
     }
+    /**
+     * Factory for type variable bounds
+     */
     static intersectBound(type, keyOf = false) {
         return TypeNames.bound(type, Combiner.INTERSECT, keyOf ? BoundModifier.KEY_OF : undefined);
     }
+    /**
+     * Anonymous type name (e.g. `{ length: number, name: string }`)
+     *
+     * @param members Member pairs to define the anonymous type
+     * @return Type name representing the anonymous type
+     */
     static anonymousType(...members) {
         return new Anonymous(members.map(it => {
             return it instanceof Member ? it : new Member(it[0], it[1], false);
         }));
     }
+    /**
+     * Tuple type name (e.g. `[number, boolean, string]`}
+     *
+     * @param memberTypes Each argument represents a distinct member type
+     * @return Type name representing the tuple type
+     */
     static tupleType(...memberTypes) {
         return new Tuple(memberTypes);
     }
+    /**
+     * Intersection type name (e.g. `Person & Serializable & Loggable`)
+     *
+     * @param typeRequirements Requirements of the intersection as individual type names
+     * @return Type name representing the intersection type
+     */
     static intersectionType(...typeRequirements) {
         return new Intersection(typeRequirements);
     }
+    /**
+     * Union type name (e.g. `int | number | any`)
+     *
+     * @param typeChoices All possible choices allowed in the union
+     * @return Type name representing the union type
+     */
     static unionType(...typeChoices) {
         return new Union(this.typesOrStrings(typeChoices));
     }
+    /** Returns a lambda type with `returnType` and parameters of listed in `parameters`. */
     static lambda(parameters = new Map(), returnType) {
         return new Lambda(parameters, returnType);
     }
+    /** Returns a lambda type with `returnType` and parameters of listed in `parameters`. */
     static lambda2(parameters = [], returnType) {
         return new Lambda(new Map(parameters), returnType);
     }

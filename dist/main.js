@@ -24,9 +24,21 @@ var LongOption;
 })(LongOption = exports.LongOption || (exports.LongOption = {}));
 function generateFile(typeMap, fileDesc, parameter) {
     const options = utils_1.optionsFromParameter(parameter);
+    // Google's protofiles are organized like Java, where package == the folder the file
+    // is in, and file == a specific service within the package. I.e. you can have multiple
+    // company/foo.proto and company/bar.proto files, where package would be 'company'.
+    //
+    // We'll match that stucture by setting up the module path as:
+    //
+    // company/foo.proto --> company/foo.ts
+    // company/bar.proto --> company/bar.ts
+    //
+    // We'll also assume that the fileDesc.name is already the `company/foo.proto` path, with
+    // the package already implicitly in it, so we won't re-append/strip/etc. it out/back in.
     const moduleName = fileDesc.name.replace('.proto', '.ts');
     let file = ts_poet_1.FileSpec.create(moduleName);
     const sourceInfo = sourceInfo_1.default.fromDescriptor(fileDesc);
+    // Syntax, unlike most fields, is not repeated and thus does not use an index
     const headerComment = sourceInfo.lookup(sourceInfo_1.Fields.file.syntax, undefined);
     utils_1.maybeAddComment(headerComment, text => (file = file.addComment(text)));
     let index = 0;
@@ -94,6 +106,7 @@ function generateEnum(enumDesc, sourceInfo, options) {
     }
     return [spec, toJsonSpec];
 }
+// Create the interface with properties
 function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options) {
     var _a, _b, _c;
     if (((_a = messageDesc === null || messageDesc === void 0 ? void 0 : messageDesc.options) === null || _a === void 0 ? void 0 : _a.clientDeprecatedMessage) === true) {
@@ -117,16 +130,18 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
         let basicType = types_1.basicTypeName(typeMap, fieldDesc, options);
         let fieldName = maybeSnakeToCamel(fieldDesc.name, options);
         let prop = ts_poet_1.PropertySpec.create(fieldName, type.type, type.isOptional);
-        if (fieldDesc.oneofIndex != null) {
+        if (fieldDesc.oneofIndex != null && !fieldDesc.proto3Optional) {
             let oneOfName = messageDesc.oneofDecl[fieldDesc.oneofIndex].name;
             prop = prop.addJavadoc(`OneOf-${oneOfName}\n`);
         }
         const info = sourceInfo.lookup(sourceInfo_1.Fields.message.field, index++);
         utils_1.maybeAddComment(info, text => (prop = prop.addJavadoc(text)));
         message = message.addProperty(prop);
+        // generation for fromObject function
         if (types_1.isRepeated(fieldDesc)) {
             const mapType = types_1.detectMapType(typeMap, messageDesc, fieldDesc, options);
             if (mapType) {
+                // if it is a map,
                 const valueFieldDesc = types_1.getMapValueFieldDesc(typeMap, messageDesc, fieldDesc, options);
                 if (valueFieldDesc != null &&
                     (types_1.isEnum(valueFieldDesc) || types_1.isMessage(valueFieldDesc) || types_1.is64BitInteger(valueFieldDesc))) {
@@ -141,6 +156,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                     if (types_1.isEnum(valueFieldDesc)) {
                         const valueAnyType = valueType;
                         const importedSymbol = valueAnyType.imported;
+                        // symbol and functionType is needed for import.
                         const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
                         const functionType = ts_poet_1.TypeNames.anyType(valueAnyType.usage + '_fromString', functionSymbol);
                         messageFromObject = messageFromObject.addCode(`%T(v as string)\n`, functionType);
@@ -163,9 +179,11 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                 }
             }
             else {
+                // if it is a list
                 if (types_1.isEnum(fieldDesc)) {
                     const basicAnyType = basicType;
                     const importedSymbol = basicAnyType.imported;
+                    // symbol and functionType is needed for import.
                     const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
                     const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
                     messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType);
@@ -185,6 +203,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
             if (types_1.isEnum(fieldDesc)) {
                 const basicAnyType = basicType;
                 const importedSymbol = basicAnyType.imported;
+                // symbol and functionType is needed for import.
                 const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
                 const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
                 messageFromObject = messageFromObject.addCode(`${fieldName}: %T(obj.${fieldName}),\n`, functionType);
@@ -240,7 +259,9 @@ function visit(proto, sourceInfo, messageFn, options, enumFn = () => { }, tsPref
     const childEnumType = isRootFile ? sourceInfo_1.Fields.file.enum_type : sourceInfo_1.Fields.message.enum_type;
     let index = 0;
     for (const enumDesc of proto.enumType) {
+        // I.e. Foo_Bar.Zaz_Inner
         const protoFullName = protoPrefix + enumDesc.name;
+        // I.e. FooBar_ZazInner
         const tsFullName = tsPrefix + maybeSnakeToCamel(enumDesc.name, options);
         const nestedSourceInfo = sourceInfo.open(childEnumType, index++);
         enumFn(tsFullName, enumDesc, nestedSourceInfo, protoFullName);
@@ -249,7 +270,9 @@ function visit(proto, sourceInfo, messageFn, options, enumFn = () => { }, tsPref
     const childType = isRootFile ? sourceInfo_1.Fields.file.message_type : sourceInfo_1.Fields.message.nested_type;
     index = 0;
     for (const message of messages) {
+        // I.e. Foo_Bar.Zaz_Inner
         const protoFullName = protoPrefix + message.name;
+        // I.e. FooBar_ZazInner
         const tsFullName = tsPrefix + maybeSnakeToCamel(message.name, options);
         const nestedSourceInfo = sourceInfo.open(childType, index++);
         messageFn(tsFullName, message, nestedSourceInfo, protoFullName);
@@ -260,6 +283,16 @@ exports.visit = visit;
 function hasSingleRepeatedField(messageDesc) {
     return messageDesc.field.length == 1 && messageDesc.field[0].label === FieldDescriptorProto.Label.LABEL_REPEATED;
 }
+// function generateOneOfProperty(typeMap: TypeMap, name: string, fields: FieldDescriptorProto[]): PropertySpec {
+//   const adtType = TypeNames.unionType(
+//     ...fields.map(f => {
+//       const kind = new Member('field', TypeNames.anyType(`'${f.name}'`), false);
+//       const value = new Member('value', toTypeName(typeMap, f), false);
+//       return TypeNames.anonymousType(kind, value);
+//     })
+//   );
+//   return PropertySpec.create(snakeToCamel(name), adtType);
+// }
 function maybeSnakeToCamel(s, options) {
     if (options.snakeToCamel) {
         return s.replace(/(\_\w)/g, m => m[1].toUpperCase());

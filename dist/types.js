@@ -10,6 +10,7 @@ const utils_1 = require("./utils");
 const sequency_1 = require("sequency");
 const sourceInfo_1 = __importDefault(require("./sourceInfo"));
 var FieldDescriptorProto = pbjs_1.google.protobuf.FieldDescriptorProto;
+/** Based on https://github.com/dcodeIO/protobuf.js/blob/master/src/types.js#L37. */
 function basicWireType(type) {
     switch (type) {
         case FieldDescriptorProto.Type.TYPE_DOUBLE:
@@ -55,6 +56,7 @@ function basicLongWireType(type) {
     }
 }
 exports.basicLongWireType = basicLongWireType;
+/** Returns the type name without any repeated/required/etc. labels. */
 function basicTypeName(typeMap, field, options, keepValueType = false) {
     switch (field.type) {
         case FieldDescriptorProto.Type.TYPE_DOUBLE:
@@ -70,6 +72,7 @@ function basicTypeName(typeMap, field, options, keepValueType = false) {
         case FieldDescriptorProto.Type.TYPE_SINT64:
         case FieldDescriptorProto.Type.TYPE_FIXED64:
         case FieldDescriptorProto.Type.TYPE_SFIXED64:
+            // this handles 2^53, Long is only needed for 2^64; this is effectively pbjs's forceNumber
             switch (options.forceLong) {
                 case main_1.LongOption.LONG:
                     return ts_poet_1.TypeNames.anyType('Long*long');
@@ -93,6 +96,7 @@ function basicTypeName(typeMap, field, options, keepValueType = false) {
     }
 }
 exports.basicTypeName = basicTypeName;
+/** Returns the Reader method for the primitive's read/write call. */
 function toReaderCall(field) {
     switch (field.type) {
         case FieldDescriptorProto.Type.TYPE_DOUBLE:
@@ -204,11 +208,15 @@ function defaultValue(type, options) {
     }
 }
 exports.defaultValue = defaultValue;
+/** Scans all of the proto files in `request` and builds a map of proto typeName -> TS module/name. */
 function createTypeMap(request, options) {
     const typeMap = new Map();
     for (const file of request.protoFile) {
+        // We assume a file.name of google/protobuf/wrappers.proto --> a module path of google/protobuf/wrapper.ts
         const moduleName = file.name.replace('.proto', '');
+        // So given a fullName like FooMessage_InnerMessage, proto will see that as package.name.FooMessage.InnerMessage
         function saveMapping(tsFullName, desc, s, protoFullName) {
+            // package is optional, but make sure we have a dot-prefixed type name either way
             const prefix = file.package.length === 0 ? '' : `.${file.package}`;
             typeMap.set(`${prefix}.${protoFullName}`, [moduleName, tsFullName, desc]);
         }
@@ -267,10 +275,13 @@ function isValueType(field) {
     return field.typeName in valueTypes;
 }
 exports.isValueType = isValueType;
+/** Maps `.some_proto_namespace.Message` to a TypeName. */
 function messageToTypeName(typeMap, protoType, keepValueType = false) {
+    // Watch for the wrapper types `.google.protobuf.StringValue` and map to `string | undefined`
     if (!keepValueType && protoType in valueTypes) {
         return valueTypes[protoType];
     }
+    // Look for other special prototypes like Timestamp that aren't technically wrapper types
     if (!keepValueType && protoType in mappedTypes) {
         return mappedTypes[protoType];
     }
@@ -278,9 +289,11 @@ function messageToTypeName(typeMap, protoType, keepValueType = false) {
     return ts_poet_1.TypeNames.importedType(`${type}@./${module}`);
 }
 exports.messageToTypeName = messageToTypeName;
+/** Breaks `.some_proto_namespace.Some.Message` into `['some_proto_namespace', 'Some_Message', Descriptor]. */
 function toModuleAndType(typeMap, protoType) {
     return typeMap.get(protoType) || utils_1.fail(`No type found for ${protoType}`);
 }
+/** Return the TypeName for any field (primitive/message/etc.) as exposed in the interface. */
 function toTypeName(typeMap, messageDesc, field, options) {
     let type = basicTypeName(typeMap, field, options, false);
     let isOptional = false;
@@ -300,6 +313,9 @@ function toTypeName(typeMap, messageDesc, field, options) {
     else if (isEnum(field)) {
         isOptional = true;
     }
+    else if (field.proto3Optional) {
+        isOptional = true;
+    }
     return { type, isOptional };
 }
 exports.toTypeName = toTypeName;
@@ -311,6 +327,7 @@ function detectMapType(typeMap, messageDesc, fieldDesc, options) {
         if (!((_a = mapType.options) === null || _a === void 0 ? void 0 : _a.mapEntry))
             return undefined;
         const keyType = toTypeName(typeMap, messageDesc, mapType.field[0], options);
+        // use basicTypeName because we don't need the '| undefined'
         const valueType = basicTypeName(typeMap, mapType.field[1], options);
         return { messageDesc: mapType, keyType: keyType.type, valueType };
     }

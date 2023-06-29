@@ -14,19 +14,21 @@ async function main() {
   // const request = CodeGeneratorRequest.fromObject(json);
   const request = CodeGeneratorRequest.decode(stdin);
   const typeMap = createTypeMap(request, optionsFromParameter(request.parameter));
-  const files = request.protoFile.filter( file => {
-    // ignore google.protobuf package
-    // because client deprecation option is added to descriptor in proto file, google/protobuf/descriptor.proto is passed on to this plugin
-    // the purpose of import is only for extension, so descriptor.proto does not need to be in the generated file.
-    return file.package !== 'google.protobuf'
-  }).map(file => {
-    const spec = generateFile(typeMap, file, request.parameter);
-    return new CodeGeneratorResponse.File({
-      name: spec.path,
-      content: prefixDisableLinter(spec)
+  const files = request.protoFile
+    .filter(file => {
+      // ignore google.protobuf package
+      // because client deprecation option is added to descriptor in proto file, google/protobuf/descriptor.proto is passed on to this plugin
+      // the purpose of import is only for extension, so descriptor.proto does not need to be in the generated file.
+      return file.package !== 'google.protobuf';
+    })
+    .map(file => {
+      const spec = generateFile(typeMap, file, request.parameter);
+      return new CodeGeneratorResponse.File({
+        name: spec.path,
+        content: prefixDisableLinter(spec)
+      });
     });
-  });
-  const response = new CodeGeneratorResponse({ file: files });
+  const response = new CodeGeneratorResponse({ file: files, supportedFeatures: 1 });
   const buffer = CodeGeneratorResponse.encode(response).finish();
   const write = promisify(process.stdout.write as (buffer: Buffer) => boolean).bind(process.stdout);
   await write(Buffer.from(buffer));

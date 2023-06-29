@@ -38,7 +38,7 @@ message ParentMessage {
         CHILD_IPSUM = 1;
         CHILD_DEPRECATED = 2 [(client_deprecated_enum_value) = true];
     }
-    double double_test = 1;
+    optional double double_test = 1;
     float float_test = 2;
     int32 int32_test = 3;
     int64 int64_test = 4;

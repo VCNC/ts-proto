@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ts_imm_1 = require("ts-imm");
 const CodeBlock_1 = require("./CodeBlock");
 const CodeWriter_1 = require("./CodeWriter");
+/** A generated typealias declaration */
 class TypeAliasSpec extends ts_imm_1.Imm {
     static create(name, type) {
         return new TypeAliasSpec({
@@ -38,6 +39,7 @@ class TypeAliasSpec extends ts_imm_1.Imm {
         });
     }
     addModifiers(...modifiers) {
+        // eslint-disable-next-line
         let curr = this;
         modifiers.forEach(it => {
             curr = curr.addModifier(it);
@@ -45,6 +47,7 @@ class TypeAliasSpec extends ts_imm_1.Imm {
         return curr;
     }
     addModifier(modifier) {
+        // require(modifier in setOf(Modifier.EXPORT)) { "unexpected typealias modifier $modifier"
         return this.copy({
             modifiers: [...this.modifiers, modifier],
         });

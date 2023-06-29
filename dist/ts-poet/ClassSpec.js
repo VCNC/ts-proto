@@ -14,6 +14,7 @@ const Modifier_1 = require("./Modifier");
 const ParameterSpec_1 = require("./ParameterSpec");
 const PropertySpec_1 = require("./PropertySpec");
 const TypeNames_1 = require("./TypeNames");
+/** A generated `class` declaration. */
 class ClassSpec extends ts_imm_1.Imm {
     static create(name) {
         return new ClassSpec({
@@ -47,12 +48,15 @@ class ClassSpec extends ts_imm_1.Imm {
         }
         codeWriter.emit(' {\n');
         codeWriter.indent();
+        // Non-static properties.
         this.propertySpecs.forEach(propertySpec => {
             if (!constructorProperties.has(propertySpec.name)) {
                 codeWriter.emit('\n');
                 propertySpec.emit(codeWriter, [Modifier_1.Modifier.PUBLIC], true);
             }
         });
+        // Write the constructor manually, allowing the replacement
+        // of property specs with constructor parameters
         if (this.constructorField) {
             codeWriter.emit('\n');
             const it = this.constructorField;
@@ -66,14 +70,18 @@ class ClassSpec extends ts_imm_1.Imm {
             }
             codeWriter.emit('constructor');
             let body = it.body;
+            // Emit constructor parameters & property specs that can be replaced with parameters
             ParameterSpec_1.ParameterSpec.emitAll(it.parameters, codeWriter, true, it.restParameter, (param, isRest) => {
                 let property = constructorProperties.get(param.name);
                 if (property && !isRest) {
+                    // Ensure the parameter always has a modifier (that makes it a property in TS)
                     if (!property.modifiers.find(m => [Modifier_1.Modifier.PUBLIC, Modifier_1.Modifier.PRIVATE, Modifier_1.Modifier.PROTECTED, Modifier_1.Modifier.READONLY].includes(m))) {
+                        // Add default public modifier
                         property = property.addModifiers(Modifier_1.Modifier.PUBLIC);
                     }
                     property.emit(codeWriter, [], false);
                     param.emitDefaultValue(codeWriter);
+                    // Remove initializing statements
                     body = body.remove(this.constructorPropertyInitSearch(property.name));
                 }
                 else {
@@ -86,12 +94,14 @@ class ClassSpec extends ts_imm_1.Imm {
             codeWriter.unindent();
             codeWriter.emit('}\n');
         }
+        // Constructors.
         this.functionSpecs.forEach(funSpec => {
             if (funSpec.isConstructor()) {
                 codeWriter.emit('\n');
                 funSpec.emit(codeWriter, [Modifier_1.Modifier.PUBLIC]);
             }
         });
+        // Functions (static and non-static).
         this.functionSpecs.forEach(funSpec => {
             if (!funSpec.isConstructor()) {
                 codeWriter.emit('\n');
@@ -140,6 +150,7 @@ class ClassSpec extends ts_imm_1.Imm {
         });
     }
     superClass(superClass) {
+        // check(this.superClass == null) { "superclass already set to ${this.superClass}" }
         return this.copy({
             superClassField: TypeNames_1.TypeNames.anyTypeMaybeString(superClass),
         });
@@ -154,8 +165,10 @@ class ClassSpec extends ts_imm_1.Imm {
             interfaces: [...this.interfaces, TypeNames_1.TypeNames.anyTypeMaybeString(iface)],
         });
     }
+    // "constructor" can't be a method name
     cstr(constructor) {
         if (constructor) {
+            // require(constructor.isConstructor) { "expected a constructor but was ${constructor.name}; use FunctionSpec.createConstructor when building"
         }
         return this.copy({
             constructorField: constructor,
@@ -186,6 +199,7 @@ class ClassSpec extends ts_imm_1.Imm {
         return this;
     }
     addFunction(functionSpec) {
+        // require(!functionSpec.isConstructor) { "Use the 'constructor' method for the constructor" }
         return this.copy({
             functionSpecs: [...this.functionSpecs, functionSpec.setEnclosed(FunctionSpec_1.Encloser.CLASS)],
         });
@@ -193,6 +207,7 @@ class ClassSpec extends ts_imm_1.Imm {
     toString() {
         return CodeWriter_1.CodeWriter.emitToString(this);
     }
+    /** Returns the properties that can be declared inline as constructor parameters. */
     constructorProperties() {
         const cstr = this.constructorField;
         if (!cstr || !cstr.body) {
@@ -216,6 +231,9 @@ class ClassSpec extends ts_imm_1.Imm {
         return result;
     }
     constructorPropertyInitSearch(n) {
+        // the outfoxx code was a lot fancier than this, but for now do the simple thing
+        // and only match on standalone lines that are exactly `this.foo = foo` (we assume
+        // any indentation and
         const pattern = `^this\\.${n}\\s*=\\s*${n}$`;
         return new RegExp(pattern);
     }

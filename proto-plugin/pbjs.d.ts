@@ -171,6 +171,7 @@ export namespace google {
             oneofIndex?: (number|null);
             jsonName?: (string|null);
             options?: (google.protobuf.FieldOptions|null);
+            proto3Optional?: (boolean|null);
         }
 
         class FieldDescriptorProto implements IFieldDescriptorProto {
@@ -185,6 +186,7 @@ export namespace google {
             public oneofIndex: number;
             public jsonName: string;
             public options?: (google.protobuf.FieldOptions|null);
+            public proto3Optional: boolean;
             public static create(properties?: google.protobuf.IFieldDescriptorProto): google.protobuf.FieldDescriptorProto;
             public static encode(message: google.protobuf.FieldDescriptorProto, writer?: $protobuf.Writer): $protobuf.Writer;
             public static encodeDelimited(message: google.protobuf.FieldDescriptorProto, writer?: $protobuf.Writer): $protobuf.Writer;
@@ -799,6 +801,7 @@ export namespace google {
                 fileToGenerate?: (string[]|null);
                 parameter?: (string|null);
                 protoFile?: (google.protobuf.FileDescriptorProto[]|null);
+                sourceFileDescriptors?: (google.protobuf.FileDescriptorProto[]|null);
                 compilerVersion?: (google.protobuf.compiler.Version|null);
             }
 
@@ -807,6 +810,7 @@ export namespace google {
                 public fileToGenerate: string[];
                 public parameter: string;
                 public protoFile: google.protobuf.FileDescriptorProto[];
+                public sourceFileDescriptors: google.protobuf.FileDescriptorProto[];
                 public compilerVersion?: (google.protobuf.compiler.Version|null);
                 public static create(properties?: google.protobuf.compiler.ICodeGeneratorRequest): google.protobuf.compiler.CodeGeneratorRequest;
                 public static encode(message: google.protobuf.compiler.CodeGeneratorRequest, writer?: $protobuf.Writer): $protobuf.Writer;
@@ -821,12 +825,14 @@ export namespace google {
 
             interface ICodeGeneratorResponse {
                 error?: (string|null);
+                supportedFeatures?: (number|Long|null);
                 file?: (google.protobuf.compiler.CodeGeneratorResponse.File[]|null);
             }
 
             class CodeGeneratorResponse implements ICodeGeneratorResponse {
                 constructor(properties?: google.protobuf.compiler.ICodeGeneratorResponse);
                 public error: string;
+                public supportedFeatures: (number|Long);
                 public file: google.protobuf.compiler.CodeGeneratorResponse.File[];
                 public static create(properties?: google.protobuf.compiler.ICodeGeneratorResponse): google.protobuf.compiler.CodeGeneratorResponse;
                 public static encode(message: google.protobuf.compiler.CodeGeneratorResponse, writer?: $protobuf.Writer): $protobuf.Writer;
@@ -841,10 +847,16 @@ export namespace google {
 
             namespace CodeGeneratorResponse {
 
+                enum Feature {
+                    FEATURE_NONE = 0,
+                    FEATURE_PROTO3_OPTIONAL = 1
+                }
+
                 interface IFile {
                     name?: (string|null);
                     insertionPoint?: (string|null);
                     content?: (string|null);
+                    generatedCodeInfo?: (google.protobuf.GeneratedCodeInfo|null);
                 }
 
                 class File implements IFile {
@@ -852,6 +864,7 @@ export namespace google {
                     public name: string;
                     public insertionPoint: string;
                     public content: string;
+                    public generatedCodeInfo?: (google.protobuf.GeneratedCodeInfo|null);
                     public static create(properties?: google.protobuf.compiler.CodeGeneratorResponse.IFile): google.protobuf.compiler.CodeGeneratorResponse.File;
                     public static encode(message: google.protobuf.compiler.CodeGeneratorResponse.File, writer?: $protobuf.Writer): $protobuf.Writer;
                     public static encodeDelimited(message: google.protobuf.compiler.CodeGeneratorResponse.File, writer?: $protobuf.Writer): $protobuf.Writer;
