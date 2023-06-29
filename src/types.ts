@@ -336,6 +336,8 @@ export function toTypeName(
     isOptional = true;
   } else if (isEnum(field)) {
     isOptional = true;
+  } else if (field.proto3Optional) {
+    isOptional = true;
   }
   return { type, isOptional };
 }
