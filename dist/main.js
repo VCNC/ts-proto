@@ -130,7 +130,7 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
         let basicType = types_1.basicTypeName(typeMap, fieldDesc, options);
         let fieldName = maybeSnakeToCamel(fieldDesc.name, options);
         let prop = ts_poet_1.PropertySpec.create(fieldName, type.type, type.isOptional);
-        if (fieldDesc.oneofIndex != null) {
+        if (fieldDesc.oneofIndex != null && !fieldDesc.proto3Optional) {
             let oneOfName = messageDesc.oneofDecl[fieldDesc.oneofIndex].name;
             prop = prop.addJavadoc(`OneOf-${oneOfName}\n`);
         }

@@ -13,9 +13,6 @@ export function SampleEnum_fromString(str: string): SampleEnum | undefined {
 }
 
 export interface ParentMessage {
-  /**
-   * OneOf-_double_test
-   */
   doubleTest?: number;
   floatTest: number;
   int32Test: number;
