@@ -23,7 +23,7 @@ function fail(message) {
 }
 exports.fail = fail;
 function singular(name) {
-    return name.substring(0, name.length - 1);
+    return name.substring(0, name.length - 1); // drop the 's', which is extremely naive
 }
 exports.singular = singular;
 function lowerFirst(name) {
@@ -57,8 +57,16 @@ function optionsFromParameter(parameter) {
     return options;
 }
 exports.optionsFromParameter = optionsFromParameter;
+// addJavadoc will attempt to expand unescaped percent %, so we replace these within source comments.
 const PercentAll = /\%/g;
+// Since we don't know what form the comment originally took, it may contain closing block comments.
 const CloseComment = /\*\//g;
+/**
+ * Removes potentially harmful characters from comments and calls the provided expression
+ * @param desc {SourceDescription} original comment information
+ * @param process {(comment: string) => void} called if a comment exists
+ * @returns {string} scrubbed text
+ */
 function maybeAddComment(desc, process) {
     if (desc.leadingComments || desc.trailingComments) {
         return process((desc.leadingComments || desc.trailingComments || '').replace(PercentAll, '%%').replace(CloseComment, '* /'));

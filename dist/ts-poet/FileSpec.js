@@ -21,7 +21,21 @@ const TypeAliasSpec_1 = require("./TypeAliasSpec");
 const TypeNames_1 = require("./TypeNames");
 const utils_1 = require("./utils");
 const NamespaceSpec_1 = require("./NamespaceSpec");
+/**
+ * A TypeScript file containing top level objects like classes, objects, functions, properties, and type
+ * aliases.
+ *
+ * Items are output in the following order:
+ * - Comment
+ * - Imports
+ * - Members
+ */
 class FileSpec extends ts_imm_1.Imm {
+    /**
+     * Creates a file to contain generated output.
+     *
+     * `file` should be the module name, e.g. for build/foo.ts, use file = foo.
+     */
     static create(file) {
         return new FileSpec({
             path: file,
@@ -70,9 +84,11 @@ class FileSpec extends ts_imm_1.Imm {
         return SymbolSpecs_1.SymbolSpecs.importsAll(localName, '!' + this.path);
     }
     emit(out) {
+        // First pass: emit the entire class, just to collect the types we'll need to import.
         const importsCollector = new CodeWriter_1.CodeWriter(new StringBuffer_1.StringBuffer(), this.indentField);
         this.emitToWriter(importsCollector);
         const requiredImports = importsCollector.requiredImports();
+        // Second pass: write the code, taking advantage of the imports.
         const codeWriter = new CodeWriter_1.CodeWriter(out, this.indentField, new Set(requiredImports));
         this.emitToWriter(codeWriter);
     }
@@ -106,12 +122,16 @@ class FileSpec extends ts_imm_1.Imm {
         });
     }
     addFunction(functionSpec) {
+        // require(!functionSpec.isConstructor) { "cannot add ${functionSpec.name} to file $path" }
+        // require(functionSpec.decorators.isEmpty()) { "decorators on module functions are not allowed" }
         checkMemberModifiers(functionSpec.modifiers);
         return this.copy({
             members: [...this.members, functionSpec],
         });
     }
     addProperty(propertySpec) {
+        // requireExactlyOneOf(propertySpec.modifiers, Modifier.CONST, Modifier.LET, Modifier.VAR)
+        // require(propertySpec.decorators.isEmpty()) { "decorators on file properties are not allowed" }
         checkMemberModifiers(propertySpec.modifiers);
         return this.copy({
             members: [...this.members, propertySpec],
@@ -198,5 +218,29 @@ __decorate([
     ts_imm_1.imm
 ], FileSpec.prototype, "indentField", void 0);
 exports.FileSpec = FileSpec;
+// /** Writes this to `directory` as UTF-8 using the standard directory structure.  */
+// public writeTo(directory: Path) {
+//   require(Files.notExists(directory) || Files.isDirectory(directory)) {
+//     "path $directory exists but is not a directory."
+//   }
+//   const outputPath = directory.resolve("$path.ts")
+//   OutputStreamWriter(Files.newOutputStream(outputPath), UTF_8).use { writer -> writeTo(writer) }
+// }
+//
+// /** Writes this to `directory` as UTF-8 using the standard directory structure.  */
+// public writeTo(directory: File) = writeTo(directory.toPath())
 function checkMemberModifiers(modifiers) {
+    // requireNoneOf(
+    //   modifiers,
+    //   Modifier.PUBLIC,
+    //   Modifier.PROTECTED,
+    //   Modifier.PRIVATE,
+    //   Modifier.READONLY,
+    //   Modifier.GET,
+    //   Modifier.SET,
+    //   Modifier.STATIC,
+    //   Modifier.CONST,
+    //   Modifier.LET,
+    //   Modifier.VAR
+    // )
 }
