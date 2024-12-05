@@ -250,7 +250,7 @@ function generateInterfaceDeclaration(
           );
         }
       }
-    } else if (isEnum(fieldDesc) || isMessage(fieldDesc) || is64BitInteger(fieldDesc)) {
+    } else if (isEnum(fieldDesc) || isMessage(fieldDesc) || isLong(fieldDesc)) {
       if (isEnum(fieldDesc)) {
         const basicAnyType = basicType as Any;
         const importedSymbol = basicAnyType.imported as Imported;
@@ -263,10 +263,12 @@ function generateInterfaceDeclaration(
           `${fieldName}: obj.${fieldName} != null ? %T.fromObject(obj.${fieldName}) : undefined,\n`,
           basicType
         );
-      } else if (isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
-        messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.toString(),\n`);
-      } else if (is64BitInteger(fieldDesc)) {
-        messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`);
+      } else if (isLong(fieldDesc) && !type.isOptional) {
+        if (options.forceLong === LongOption.STRING) {
+          messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.toString(),\n`);
+        } else {
+          messageFromObject = messageFromObject.addCode(`${fieldName}: parseInt(obj.${fieldName}),\n`);
+        }
       }
     }
   }

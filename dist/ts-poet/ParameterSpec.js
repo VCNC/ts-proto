@@ -12,7 +12,6 @@ const CodeWriter_1 = require("./CodeWriter");
 const DecoratorSpec_1 = require("./DecoratorSpec");
 class ParameterSpec extends ts_imm_1.Imm {
     static create(name, type, optional = false, ...modifiers) {
-        // require(name.isName) { "not a valid name: $name" }
         return new ParameterSpec({
             name,
             type,
@@ -94,7 +93,6 @@ class ParameterSpec extends ts_imm_1.Imm {
         return this.defaultValueBlock(CodeBlock_1.CodeBlock.of(format, ...args));
     }
     defaultValueBlock(codeBlock) {
-        // check(this.defValue === null, "initializer was already set");
         return this.copy({
             defaultValueField: codeBlock,
         });

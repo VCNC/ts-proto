@@ -16,8 +16,6 @@ const Modifier_1 = require("./Modifier");
 const PropertySpec_1 = require("./PropertySpec");
 const TypeAliasSpec_1 = require("./TypeAliasSpec");
 const utils_1 = require("./utils");
-/**
- */
 class NamespaceSpec extends ts_imm_1.Imm {
     static create(name) {
         return new NamespaceSpec({

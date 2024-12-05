@@ -9,7 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ts_imm_1 = require("ts-imm");
 const CodeBlock_1 = require("./CodeBlock");
 const CodeWriter_1 = require("./CodeWriter");
-/** A generated property declaration. */
 class PropertySpec extends ts_imm_1.Imm {
     static create(name, type, optional = false, ...modifiers) {
         return new PropertySpec({

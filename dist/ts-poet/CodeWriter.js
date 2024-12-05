@@ -10,7 +10,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-//@ts-nocheck
 const lodash_1 = __importDefault(require("lodash"));
 const Path = __importStar(require("path"));
 const ClassSpec_1 = require("./ClassSpec");
@@ -23,10 +22,6 @@ const Modifier_1 = require("./Modifier");
 const StringBuffer_1 = require("./StringBuffer");
 const SymbolSpecs_1 = require("./SymbolSpecs");
 const utils_1 = require("./utils");
-/**
- * Converts a [FileSpec] to a string suitable to both human- and tsc-consumption. This honors
- * imports, indentation, and deferred variable names.
- */
 class CodeWriter {
     constructor(out, indentString = '  ', referencedSymbols = new Set()) {
         this.indentString = indentString;
@@ -56,7 +51,7 @@ class CodeWriter {
         return this;
     }
     emitComment(codeBlock) {
-        this.trailingNewline = true; // Force the '//' prefix for the comment.
+        this.trailingNewline = true;
         this.comment = true;
         try {
             this.emitCodeBlock(codeBlock);
@@ -86,10 +81,6 @@ class CodeWriter {
             this.emit(inline ? ' ' : '\n');
         });
     }
-    /**
-     * Emits `modifiers` in the standard order. Modifiers in `implicitModifiers` will not
-     * be emitted.
-     */
     emitModifiers(modifiers, implicitModifiers = []) {
         if (modifiers.length === 0) {
             return;
@@ -100,11 +91,6 @@ class CodeWriter {
             }
         });
     }
-    /**
-     * Emit type variables with their bounds.
-     *
-     * This should only be used when declaring type variables; everywhere else bounds are omitted.
-     */
     emitTypeVariables(typeVariables) {
         if (typeVariables.length === 0) {
             return;
@@ -142,16 +128,12 @@ class CodeWriter {
         const augmentImports = lodash_1.default.groupBy(utils_1.filterInstances(imports, SymbolSpecs_1.Augmented), a => a.augmented);
         const sideEffectImports = lodash_1.default.groupBy(utils_1.filterInstances(imports, SymbolSpecs_1.SideEffect), a => a.source);
         if (imports.length > 0) {
-            const m = lodash_1.default.groupBy(imports.filter(it => !(it instanceof SymbolSpecs_1.Augmented) || !(it instanceof SymbolSpecs_1.SideEffect)), it => it.source); // FileModules.importPath(this.path, it.source));
-            // .toSortedMap()
-            // tslint:disable-next-line:no-shadowed-variable
+            const m = lodash_1.default.groupBy(imports.filter(it => !(it instanceof SymbolSpecs_1.Augmented) || !(it instanceof SymbolSpecs_1.SideEffect)), it => it.source);
             Object.entries(m).forEach(([sourceImportPath, imports]) => {
-                // Skip imports from the current module
                 if (path === sourceImportPath || Path.resolve(path) === Path.resolve(sourceImportPath)) {
                     return;
                 }
                 const importPath = maybeRelativePath(path, sourceImportPath);
-                // Output star imports individually
                 utils_1.filterInstances(imports, SymbolSpecs_1.ImportsAll).forEach(i => {
                     this.emitCode("%[import * as %L from '%L';\n%]", i.value, importPath);
                     const augments = augmentImports[i.value];
@@ -159,7 +141,6 @@ class CodeWriter {
                         augments.forEach(augment => this.emitCode("%[import '%L';\n%]", augment.source));
                     }
                 });
-                // Output named imports as a group
                 const names = utils_1.unique(utils_1.filterInstances(imports, SymbolSpecs_1.ImportsName).map(it => it.value.split('.')[0]));
                 const def = utils_1.unique(utils_1.filterInstances(imports, SymbolSpecs_1.ImportsDefault).map(it => it.value));
                 if (names.length > 0 || def.length > 0) {
@@ -183,17 +164,11 @@ class CodeWriter {
         }
         return this;
     }
-    /* TODO
-    public emitCode(s: string): void {
-      this.emitCodeBlock(CodeBlock.of(s));
-    }
-    */
     emitCode(format, ...args) {
         this.emitCodeBlock(CodeBlock_1.CodeBlock.of(format, ...args));
         return this;
     }
     emitCodeBlock(codeBlock) {
-        // Transfer all symbols referenced in the code block
         codeBlock.referencedSymbols.forEach(sym => this.referencedSymbols.add(sym));
         let a = 0;
         codeBlock.formatParts.forEach(part => {
@@ -229,7 +204,6 @@ class CodeWriter {
                 case '%F':
                     this.emitFunction(codeBlock.args[a++]);
                     break;
-                // Handle deferred type.
                 default:
                     this.emit(part);
             }
@@ -239,15 +213,9 @@ class CodeWriter {
         }
         return this;
     }
-    /**
-     * Emits `s` with indentation as required. It's important that all code that writes to
-     * [CodeWriter.out] does it through here, since we emit indentation lazily in order to avoid
-     * unnecessary trailing whitespace.
-     */
     emit(s) {
         let first = true;
         s.split('\n').forEach(line => {
-            // Emit a newline character. Make sure blank lines in KDoc & comments look good.
             if (!first) {
                 if ((this.javaDoc || this.comment) && this.trailingNewline) {
                     this.emitIndentation();
@@ -258,9 +226,8 @@ class CodeWriter {
             }
             first = false;
             if (line.length === 0) {
-                return; // Don't indent empty lines.
+                return;
             }
-            // Emit indentation and comment prefix if necessary.
             if (this.trailingNewline) {
                 this.emitIndentation();
                 if (this.javaDoc) {
@@ -278,10 +245,6 @@ class CodeWriter {
     newLine() {
         return this.emit('\n');
     }
-    /**
-     * Returns the symbols that are required to be imported for this code. If there were any simple name
-     * collisions, that symbol's first use is imported; which may cause compilation issues.
-     */
     requiredImports() {
         const imported = [];
         this.referencedSymbols.forEach(sym => {
@@ -308,7 +271,6 @@ class CodeWriter {
     }
     emitString(s) {
         if (s === null) {
-            // Emit null as a literal null: no quotes.
             this.emit('null');
         }
         else if (s === undefined) {
@@ -343,14 +305,10 @@ class CodeWriter {
     }
 }
 exports.CodeWriter = CodeWriter;
-// If output path is `sub/foo.ts` and importPath is `./foo`, we want to
-// return `../foo`. Note that technically ! is supposed to be usable as
-// a hint to do/not do this, but we don't look for that yet.
 function maybeRelativePath(outputPath, importPath) {
     if (!importPath.startsWith('./')) {
         return importPath;
     }
-    // Ideally we'd use a path library to do this
     const dirs = outputPath.split('').filter(l => l === '/').length;
     if (dirs === 0) {
         return importPath;
