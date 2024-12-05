@@ -10,7 +10,6 @@ const ts_imm_1 = require("ts-imm");
 const CodeBlock_1 = require("./CodeBlock");
 const CodeWriter_1 = require("./CodeWriter");
 const SymbolSpecs_1 = require("./SymbolSpecs");
-/** A generated function or class decorator declaration. */
 class DecoratorSpec extends ts_imm_1.Imm {
     static create(name) {
         return new DecoratorSpec({

@@ -13,7 +13,6 @@ const FunctionSpec_1 = require("./FunctionSpec");
 const Modifier_1 = require("./Modifier");
 const PropertySpec_1 = require("./PropertySpec");
 const TypeNames_1 = require("./TypeNames");
-/** A generated `interface` declaration. */
 class InterfaceSpec extends ts_imm_1.Imm {
     static create(name) {
         return new InterfaceSpec({
@@ -40,26 +39,18 @@ class InterfaceSpec extends ts_imm_1.Imm {
         }
         codeWriter.emit(' {\n');
         codeWriter.indent();
-        // If we have functions, then we'll break them apart by newlines. But if we don't have any functions,
-        // we want to keep the body condensed, sans new lines. So only emit this beginning newline if we have
-        // upcoming functions ...and we have a callable/property/indexable spec was otherwise we'll have two
-        // newlines together in a row: this one and the one before the first function.
         if (this.functionSpecs.length > 0 && !(this.callableField || this.propertySpecs || this.indexableSpecs)) {
             codeWriter.newLine();
         }
-        // Callable
         if (this.callableField) {
             this.callableField.emit(codeWriter, [Modifier_1.Modifier.ABSTRACT]);
         }
-        // Properties.
         this.propertySpecs.forEach(propertySpec => {
             propertySpec.emit(codeWriter, [Modifier_1.Modifier.PUBLIC], true);
         });
-        // Indexables
         this.indexableSpecs.forEach(funSpec => {
             funSpec.emit(codeWriter, [Modifier_1.Modifier.PUBLIC, Modifier_1.Modifier.ABSTRACT]);
         });
-        // Functions.
         this.functionSpecs.forEach(funSpec => {
             if (!funSpec.isConstructor()) {
                 codeWriter.newLine();
@@ -108,7 +99,6 @@ class InterfaceSpec extends ts_imm_1.Imm {
         });
     }
     addProperties(...propertySpecs) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let curr = this;
         propertySpecs.forEach(it => {
             curr = curr.addProperty(it);
@@ -122,19 +112,15 @@ class InterfaceSpec extends ts_imm_1.Imm {
         }
         else {
             const name = nameOrProp;
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const type = TypeNames_1.TypeNames.anyTypeMaybeString(maybeType);
             const data = maybeData || {};
             propertySpec = PropertySpec_1.PropertySpec.create(name, type).copy(data);
         }
-        // require(propertySpec.decorators.isEmpty()) { "Interface properties cannot have decorators" }
-        // require(propertySpec.initializer == null) { "Interface properties cannot have initializers" }
         return this.copy({
             propertySpecs: [...this.propertySpecs, propertySpec],
         });
     }
     addFunctions(...functionSpecs) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let curr = this;
         functionSpecs.forEach(it => {
             curr = curr.addFunction(it);
@@ -142,16 +128,11 @@ class InterfaceSpec extends ts_imm_1.Imm {
         return curr;
     }
     addFunction(functionSpec) {
-        // require(functionSpec.modifiers.contains(Modifier.ABSTRACT)) { "Interface methods must be abstract" }
-        // require(functionSpec.body.isEmpty()) { "Interface methods cannot have code" }
-        // require(!functionSpec.isConstructor) { "Interfaces cannot have a constructor" }
-        // require(functionSpec.decorators.isEmpty()) { "Interface functions cannot have decorators" }
         return this.copy({
             functionSpecs: [...this.functionSpecs, functionSpec.setEnclosed(FunctionSpec_1.Encloser.INTERFACE)],
         });
     }
     addIndexables(...indexableSpecs) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let curr = this;
         indexableSpecs.forEach(it => {
             curr = curr.addIndexable(it);
@@ -159,15 +140,12 @@ class InterfaceSpec extends ts_imm_1.Imm {
         return curr;
     }
     addIndexable(functionSpec) {
-        // require(functionSpec.modifiers.contains(Modifier.ABSTRACT)) { "Indexables must be ABSTRACT" }
         return this.copy({
             indexableSpecs: [...this.indexableSpecs, functionSpec],
         });
     }
     callable(callable) {
         if (callable) {
-            // require(callable.isCallable) { "expected a callable signature but was ${callable.name}; use FunctionSpec.createCallable when building" }
-            // require(callable.modifiers == setOf(Modifier.ABSTRACT)) { "Callable must be ABSTRACT and nothing else" }
         }
         return this.copy({
             callableField: callable,
