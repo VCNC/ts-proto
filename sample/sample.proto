@@ -22,6 +22,11 @@ extend google.protobuf.EnumValueOptions {
     bool client_deprecated_enum_value = 50001;
 }
 
+enum DeprecatedEnum {
+    option (client_deprecated_enum) = true;
+    HELLO = 0;
+}
+
 enum SampleEnum {
     LOREM = 0;
     IPSUM = 1;
@@ -59,7 +64,7 @@ message SampleMessage {
     map<string, uint64> int64_map = 12;
 }
 
-message Deprecated {
+message DeprecatedMessage {
     option (client_deprecated_message) = true;
     bool tmp = 1;
 }
