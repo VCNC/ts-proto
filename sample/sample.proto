@@ -2,6 +2,10 @@ syntax = "proto3";
 
 import "google/protobuf/descriptor.proto";
 
+extend google.protobuf.FileOptions {
+  bool client_deprecated_file = 50001;
+}
+
 extend google.protobuf.FieldOptions {
     bool client_deprecated_field = 50001;
 }

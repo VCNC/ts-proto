@@ -339,6 +339,7 @@ message MethodDescriptorProto {
 
 
 message FileOptions {
+  optional bool client_deprecated_file = 50001;
 
   // Sets the Java package where classes generated from this .proto will be
   // placed.  By default, the proto package is used, but this is often

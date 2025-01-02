@@ -370,6 +370,7 @@ export namespace google {
         }
 
         interface IFileOptions {
+            clientDeprecatedFile?: (boolean|null);
             javaPackage?: (string|null);
             javaOuterClassname?: (string|null);
             javaMultipleFiles?: (boolean|null);
@@ -395,6 +396,7 @@ export namespace google {
 
         class FileOptions implements IFileOptions {
             constructor(properties?: google.protobuf.IFileOptions);
+            public clientDeprecatedFile: boolean;
             public javaPackage: string;
             public javaOuterClassname: string;
             public javaMultipleFiles: boolean;
