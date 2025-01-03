@@ -171,7 +171,7 @@ function generateInterfaceDeclaration(
     let basicType = basicTypeName(typeMap, fieldDesc, options);
     let fieldName = maybeSnakeToCamel(fieldDesc.name, options);
     let prop = PropertySpec.create(fieldName, type.type, type.isOptional);
-    if (fieldDesc.oneofIndex != null && !fieldDesc.proto3Optional) {
+    if (fieldDesc.oneofIndex != null && !fieldDesc.proto3Optional && type.isOneOf) {
       let oneOfName = messageDesc.oneofDecl[fieldDesc.oneofIndex].name;
       prop = prop.addJavadoc(`OneOf-${oneOfName}\n`);
     }

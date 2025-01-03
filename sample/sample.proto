@@ -55,7 +55,11 @@ message ParentMessage {
     string string_test = 6;
     repeated bool bool_array_test = 7;
     repeated ChildMessage message_array = 8;
-}
+    oneof oneof_test {
+        ChildEnum child_enum = 10;
+        SampleEnum sample_enum = 11;
+    }
+}    
 
 message SampleMessage {
     map<string, string> string_map = 9;

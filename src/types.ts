@@ -321,9 +321,10 @@ export function toTypeName(
   messageDesc: DescriptorProto,
   field: FieldDescriptorProto,
   options: Options
-): { type: TypeName; isOptional: boolean } {
+): { type: TypeName; isOptional: boolean; isOneOf: boolean } {
   let type = basicTypeName(typeMap, field, options, false);
   let isOptional = false;
+  let isOneOf = false;
   if (isRepeated(field)) {
     const mapType = detectMapType(typeMap, messageDesc, field, options);
     if (mapType) {
@@ -332,14 +333,17 @@ export function toTypeName(
     } else {
       type = TypeNames.arrayType(type);
     }
-  } else if ((isWithinOneOf(field) || isMessage(field)) && !isValueType(field)) {
+  } else if (isMessage(field) && !isValueType(field)) {
     isOptional = true;
+  } else if (isWithinOneOf(field)) {
+    isOptional = true;
+    isOneOf = true;
   } else if (isEnum(field)) {
     isOptional = true;
   } else if (field.proto3Optional) {
     isOptional = true;
   }
-  return { type, isOptional };
+  return { type, isOptional, isOneOf };
 }
 
 export function detectMapType(

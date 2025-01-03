@@ -13,6 +13,14 @@ export function SampleEnum_fromString(str: string): SampleEnum | undefined {
 }
 
 export interface ParentMessage {
+  /**
+   * OneOf-oneof_test
+   */
+  childEnum?: ParentMessage.ChildEnum;
+  /**
+   * OneOf-oneof_test
+   */
+  sampleEnum?: SampleEnum;
   doubleTest?: number;
   floatTest: number;
   int32Test: number;
@@ -27,6 +35,8 @@ export namespace ParentMessage {
   export function fromObject(obj: any): ParentMessage {
     return {
       ...obj,
+      childEnum: ParentMessage.ChildEnum_fromString(obj.childEnum),
+      sampleEnum: SampleEnum_fromString(obj.sampleEnum),
       int64Test: parseInt(obj.int64Test),
       messageArray: obj.messageArray.map((v: any) => ParentMessage.ChildMessage.fromObject(v)),
     }
