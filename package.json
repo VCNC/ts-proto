@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "build:release": "tsc --project tsconfig.release.json",
+    "build:release": "tsc --project tsconfig.release.json && ./pbjs.sh && ./paste-build-into-proto-plugin.sh",
     "setup": "./pbjs.sh && ./integration/pbjs.sh && ./integration/update-bins.sh && ./integration/codegen.sh",
     "test": "jest -c jest.config.js"
   },
