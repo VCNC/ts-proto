@@ -335,14 +335,16 @@ export function toTypeName(
     }
   } else if (isMessage(field) && !isValueType(field)) {
     isOptional = true;
-  } else if (isWithinOneOf(field)) {
-    isOptional = true;
-    isOneOf = true;
   } else if (isEnum(field)) {
     isOptional = true;
   } else if (field.proto3Optional) {
     isOptional = true;
   }
+
+  if (isWithinOneOf(field)) {
+    isOneOf = true;
+  }
+
   return { type, isOptional, isOneOf };
 }
 
