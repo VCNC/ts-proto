@@ -284,6 +284,7 @@ function toModuleAndType(typeMap, protoType) {
 function toTypeName(typeMap, messageDesc, field, options) {
     let type = basicTypeName(typeMap, field, options, false);
     let isOptional = false;
+    let isOneOf = false;
     if (isRepeated(field)) {
         const mapType = detectMapType(typeMap, messageDesc, field, options);
         if (mapType) {
@@ -294,7 +295,7 @@ function toTypeName(typeMap, messageDesc, field, options) {
             type = ts_poet_1.TypeNames.arrayType(type);
         }
     }
-    else if ((isWithinOneOf(field) || isMessage(field)) && !isValueType(field)) {
+    else if (isMessage(field) && !isValueType(field)) {
         isOptional = true;
     }
     else if (isEnum(field)) {
@@ -303,7 +304,10 @@ function toTypeName(typeMap, messageDesc, field, options) {
     else if (field.proto3Optional) {
         isOptional = true;
     }
-    return { type, isOptional };
+    if (isWithinOneOf(field)) {
+        isOneOf = true;
+    }
+    return { type, isOptional, isOneOf };
 }
 exports.toTypeName = toTypeName;
 function detectMapType(typeMap, messageDesc, fieldDesc, options) {

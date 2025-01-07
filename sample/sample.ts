@@ -21,6 +21,14 @@ export interface ParentMessage {
   stringTest: string;
   boolArrayTest: boolean[];
   messageArray: ParentMessage.ChildMessage[];
+  /**
+   * OneOf-oneof_test
+   */
+  childEnum?: ParentMessage.ChildEnum;
+  /**
+   * OneOf-oneof_test
+   */
+  sampleEnum?: SampleEnum;
 }
 
 export namespace ParentMessage {
@@ -29,6 +37,8 @@ export namespace ParentMessage {
       ...obj,
       int64Test: parseInt(obj.int64Test),
       messageArray: obj.messageArray.map((v: any) => ParentMessage.ChildMessage.fromObject(v)),
+      childEnum: ParentMessage.ChildEnum_fromString(obj.childEnum),
+      sampleEnum: SampleEnum_fromString(obj.sampleEnum),
     }
   }
 

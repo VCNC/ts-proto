@@ -19,7 +19,7 @@ async function main() {
       // ignore google.protobuf package
       // because client deprecation option is added to descriptor in proto file, google/protobuf/descriptor.proto is passed on to this plugin
       // the purpose of import is only for extension, so descriptor.proto does not need to be in the generated file.
-      return file.package !== 'google.protobuf';
+      return file.package !== 'google.protobuf' && file.options?.clientDeprecatedFile !== true;
     })
     .map(file => {
       const spec = generateFile(typeMap, file, request.parameter);

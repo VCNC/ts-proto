@@ -2133,8 +2133,7 @@
                  * @memberof google.protobuf.FieldDescriptorProto
                  * @instance
                  */
-                // 이거 넣으면 파싱실패함 왠지는 누가 알려줘
-                // FieldDescriptorProto.prototype.oneofIndex = 0;
+                FieldDescriptorProto.prototype.oneofIndex = 0;
     
                 /**
                  * FieldDescriptorProto jsonName.
@@ -4195,6 +4194,7 @@
                  * Properties of a FileOptions.
                  * @memberof google.protobuf
                  * @interface IFileOptions
+                 * @property {boolean|null} [clientDeprecatedFile] FileOptions clientDeprecatedFile
                  * @property {string|null} [javaPackage] FileOptions javaPackage
                  * @property {string|null} [javaOuterClassname] FileOptions javaOuterClassname
                  * @property {boolean|null} [javaMultipleFiles] FileOptions javaMultipleFiles
@@ -4233,6 +4233,14 @@
                             if (properties[keys[i]] != null)
                                 this[keys[i]] = properties[keys[i]];
                 }
+    
+                /**
+                 * FileOptions clientDeprecatedFile.
+                 * @member {boolean} clientDeprecatedFile
+                 * @memberof google.protobuf.FileOptions
+                 * @instance
+                 */
+                FileOptions.prototype.clientDeprecatedFile = false;
     
                 /**
                  * FileOptions javaPackage.
@@ -4469,6 +4477,8 @@
                     if (message.uninterpretedOption != null && message.uninterpretedOption.length)
                         for (var i = 0; i < message.uninterpretedOption.length; ++i)
                             $root.google.protobuf.UninterpretedOption.encode(message.uninterpretedOption[i], writer.uint32(/* id 999, wireType 2 =*/7994).fork()).ldelim();
+                    if (message.clientDeprecatedFile != null && Object.hasOwnProperty.call(message, "clientDeprecatedFile"))
+                        writer.uint32(/* id 50001, wireType 0 =*/400008).bool(message.clientDeprecatedFile);
                     return writer;
                 };
     
@@ -4503,6 +4513,9 @@
                     while (reader.pos < end) {
                         var tag = reader.uint32();
                         switch (tag >>> 3) {
+                        case 50001:
+                            message.clientDeprecatedFile = reader.bool();
+                            break;
                         case 1:
                             message.javaPackage = reader.string();
                             break;
@@ -4603,6 +4616,9 @@
                 FileOptions.verify = function verify(message) {
                     if (typeof message !== "object" || message === null)
                         return "object expected";
+                    if (message.clientDeprecatedFile != null && message.hasOwnProperty("clientDeprecatedFile"))
+                        if (typeof message.clientDeprecatedFile !== "boolean")
+                            return "clientDeprecatedFile: boolean expected";
                     if (message.javaPackage != null && message.hasOwnProperty("javaPackage"))
                         if (!$util.isString(message.javaPackage))
                             return "javaPackage: string expected";
@@ -4693,6 +4709,8 @@
                     if (object instanceof $root.google.protobuf.FileOptions)
                         return object;
                     var message = new $root.google.protobuf.FileOptions();
+                    if (object.clientDeprecatedFile != null)
+                        message.clientDeprecatedFile = Boolean(object.clientDeprecatedFile);
                     if (object.javaPackage != null)
                         message.javaPackage = String(object.javaPackage);
                     if (object.javaOuterClassname != null)
@@ -4794,6 +4812,7 @@
                         object.phpGenericServices = false;
                         object.phpMetadataNamespace = "";
                         object.rubyPackage = "";
+                        object.clientDeprecatedFile = false;
                     }
                     if (message.javaPackage != null && message.hasOwnProperty("javaPackage"))
                         object.javaPackage = message.javaPackage;
@@ -4840,6 +4859,8 @@
                         for (var j = 0; j < message.uninterpretedOption.length; ++j)
                             object.uninterpretedOption[j] = $root.google.protobuf.UninterpretedOption.toObject(message.uninterpretedOption[j], options);
                     }
+                    if (message.clientDeprecatedFile != null && message.hasOwnProperty("clientDeprecatedFile"))
+                        object.clientDeprecatedFile = message.clientDeprecatedFile;
                     return object;
                 };
     

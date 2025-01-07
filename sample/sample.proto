@@ -2,6 +2,10 @@ syntax = "proto3";
 
 import "google/protobuf/descriptor.proto";
 
+extend google.protobuf.FileOptions {
+  bool client_deprecated_file = 50001;
+}
+
 extend google.protobuf.FieldOptions {
     bool client_deprecated_field = 50001;
 }
@@ -16,6 +20,11 @@ extend google.protobuf.EnumOptions {
 
 extend google.protobuf.EnumValueOptions {
     bool client_deprecated_enum_value = 50001;
+}
+
+enum DeprecatedEnum {
+    option (client_deprecated_enum) = true;
+    HELLO = 0;
 }
 
 enum SampleEnum {
@@ -46,7 +55,11 @@ message ParentMessage {
     string string_test = 6;
     repeated bool bool_array_test = 7;
     repeated ChildMessage message_array = 8;
-}
+    oneof oneof_test {
+        ChildEnum child_enum = 10;
+        SampleEnum sample_enum = 11;
+    }
+}    
 
 message SampleMessage {
     map<string, string> string_map = 9;
@@ -55,7 +68,7 @@ message SampleMessage {
     map<string, uint64> int64_map = 12;
 }
 
-message Deprecated {
+message DeprecatedMessage {
     option (client_deprecated_message) = true;
     bool tmp = 1;
 }

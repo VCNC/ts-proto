@@ -13,7 +13,8 @@ async function main() {
     const typeMap = types_1.createTypeMap(request, utils_1.optionsFromParameter(request.parameter));
     const files = request.protoFile
         .filter(file => {
-        return file.package !== 'google.protobuf';
+        var _a;
+        return file.package !== 'google.protobuf' && ((_a = file.options) === null || _a === void 0 ? void 0 : _a.clientDeprecatedFile) !== true;
     })
         .map(file => {
         const spec = main_1.generateFile(typeMap, file, request.parameter);

@@ -1,0 +1,12 @@
+syntax = "proto3";
+package taxi;
+
+import "sample.proto";
+
+option (client_deprecated_file) = true;
+
+message DriverGetCurrentMissionReviewStatisticsEntryParams {
+}
+
+message DriverGetCurrentMissionReviewStatisticsEntryResult {
+}
