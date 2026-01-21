@@ -168,16 +168,16 @@ function generateInterfaceDeclaration(typeMap, messageDesc, sourceInfo, options)
                     const importedSymbol = basicAnyType.imported;
                     const functionSymbol = new SymbolSpecs_1.ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
                     const functionType = ts_poet_1.TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
-                    messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`, functionType);
+                    messageFromObject = messageFromObject.addCode(`${fieldName}: (obj.${fieldName} ?? []).map((v: any) => %T(v)),\n`, functionType);
                 }
                 else if (types_1.isMessage(fieldDesc)) {
-                    messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`, basicType);
+                    messageFromObject = messageFromObject.addCode(`${fieldName}: (obj.${fieldName} ?? []).map((v: any) => %T.fromObject(v)),\n`, basicType);
                 }
                 else if (types_1.isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
-                    messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: any) => v.toString()),\n`, basicType);
+                    messageFromObject = messageFromObject.addCode(`${fieldName}: (obj.${fieldName} ?? []).map((v: any) => v.toString()),\n`, basicType);
                 }
                 else if (types_1.is64BitInteger(fieldDesc)) {
-                    messageFromObject = messageFromObject.addCode(`${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`, basicType);
+                    messageFromObject = messageFromObject.addCode(`${fieldName}: (obj.${fieldName} ?? []).map((v: string) => parseInt(v)),\n`, basicType);
                 }
             }
         }
