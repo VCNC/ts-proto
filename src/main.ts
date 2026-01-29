@@ -230,22 +230,22 @@ function generateInterfaceDeclaration(
           const functionSymbol = new ImportsName(importedSymbol.value + '_fromString', importedSymbol.source);
           const functionType = TypeNames.anyType(basicAnyType.usage + '_fromString', functionSymbol);
           messageFromObject = messageFromObject.addCode(
-            `${fieldName}: (obj.${fieldName} ?? []).map((v: any) => %T(v)),\n`,
+            `${fieldName}: obj.${fieldName}.map((v: any) => %T(v)),\n`,
             functionType
           );
         } else if (isMessage(fieldDesc)) {
           messageFromObject = messageFromObject.addCode(
-            `${fieldName}: (obj.${fieldName} ?? []).map((v: any) => %T.fromObject(v)),\n`,
+            `${fieldName}: obj.${fieldName}.map((v: any) => %T.fromObject(v)),\n`,
             basicType
           );
         } else if (isLong(fieldDesc) && options.forceLong === LongOption.STRING) {
           messageFromObject = messageFromObject.addCode(
-            `${fieldName}: (obj.${fieldName} ?? []).map((v: any) => v.toString()),\n`,
+            `${fieldName}: obj.${fieldName}.map((v: any) => v.toString()),\n`,
             basicType
           );
         } else if (is64BitInteger(fieldDesc)) {
           messageFromObject = messageFromObject.addCode(
-            `${fieldName}: (obj.${fieldName} ?? []).map((v: string) => parseInt(v)),\n`,
+            `${fieldName}: obj.${fieldName}.map((v: string) => parseInt(v)),\n`,
             basicType
           );
         }
