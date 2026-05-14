@@ -306,6 +306,7 @@ function toTypeName(typeMap, messageDesc, field, options) {
     }
     if (isWithinOneOf(field)) {
         isOneOf = true;
+        isOptional = true;
     }
     return { type, isOptional, isOneOf };
 }
