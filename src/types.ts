@@ -343,6 +343,7 @@ export function toTypeName(
 
   if (isWithinOneOf(field)) {
     isOneOf = true;
+    isOptional = true;
   }
 
   return { type, isOptional, isOneOf };
